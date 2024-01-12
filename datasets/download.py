@@ -8,6 +8,6 @@ from torchvision import datasets
 DOWNLOAD = True
 
 # 准备数据集
-train_datasets = datasets.CIFAR10("./datasets", train=True, download=DOWNLOAD)
+train_datasets = datasets.CIFAR10("./", train=True, download=DOWNLOAD)
 
-test_datasets = datasets.CIFAR10("./datasets", train=False, download=DOWNLOAD)
+test_datasets = datasets.CIFAR10("./", train=False, download=DOWNLOAD)

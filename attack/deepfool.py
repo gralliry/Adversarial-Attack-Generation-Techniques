@@ -11,98 +11,95 @@ from .model import BaseModel
 
 
 class DeepFool(BaseModel):
-    def __init__(self, model, overshoot=0.02, max_iter=50, cuda=True):
+    def __init__(self, model, overshoot=0.02, iters=50, cuda=True):
         """
         DeepFool
+        https://arxiv.org/abs/1511.04599
+        https://github.com/LTS4/DeepFool
+        https://github.com/aminul-huq/DeepFool
+        https://medium.com/@aminul.huq11/pytorch-implementation-of-deepfool-53e889486ed4
         :param model: 模型
-        :param overshoot:
-        :param max_iter: 最大迭代次数
+        :param overshoot: 最大限制
+        :param iters: 迭代次数
         :param cuda: 是否启动cuda
         """
         super().__init__(model=model, cuda=cuda)
 
         self.overshoot = overshoot
-        self.max_iter = max_iter
+        self.iters = iters
 
-    def test_attack_args(self, image, **kwargs):
+    def test_attack_args(self, image, target, **kwargs):
         return (image,)
 
     def attack(self, image):
         """
         # DeepFool
         只接受 batch_size = 1 的数据
-        https://medium.com/@aminul.huq11/pytorch-implementation-of-deepfool-53e889486ed4
-        https://github.com/aminul-huq/DeepFool
         :param image: 需要处理的张量
         :return: 生成的对抗样本
         """
         assert image.size(0) == 1, ValueError("只接受 batch_size = 1 的数据")
-
         image = self.totensor(image)
-
+        # pert_image = self.totensor(image)
+        x = self.totensor(image, requires_grad=True)
+        # 获取正确的预测输出
         f_image = self.model(image)
-        # 获取类别数
+        fs = self.model(x)
+        # 获取类别数/标签数
         num_classes = f_image.size(1)
-
-        f_image = f_image.data.cpu().numpy().flatten()
-        i_classes = (np.array(f_image)).flatten().argsort()[::-1]
-
+        # 获取所有标签正确率的索引排序
+        i_classes = f_image.data[0].argsort().cpu().numpy()[::-1]
         i_classes = i_classes[0:num_classes]
+        # 当前模型输出的预测标签
         label = i_classes[0]
-
-        pert_image = self.totensor(image)
-
-        input_shape = image.shape
-        w = np.zeros(input_shape)
-        r_tot = np.zeros(input_shape)
-
-        loop_i = 0
-
-        # x = Variable(pert_image[None, :], requires_grad=True)
-        # x = torch.tensor(pert_image, requires_grad=True)
-        x = self.totensor(pert_image, requires_grad=True)
-        fs = self.model.forward(x)
-
-        # 从这里开始循环
-        # fs_list = [fs[0, i_classes[k]] for k in range(num_classes)]
         k_i = label
+        # 当前标签到正确标签的梯度差距
+        w = np.zeros(image.shape)
+        r_tot = np.zeros(image.shape)
 
-        while k_i == label and loop_i < self.max_iter:
+        self.model.eval()
+        with torch.set_grad_enabled(True):
+            for _ in range(self.iters):
+                # 如果预测后标签仍是正确的标签
+                if k_i != label:
+                    # 成功生成对抗样本，直接退出
+                    break
+                # 设定损失最小为0
+                pert = 0
+                # 对正确标签反向传播
+                fs[0, i_classes[0]].backward(retain_graph=True)
+                # 当前正确标签的梯度
+                grad_orig = x.grad.data.cpu().numpy().copy()
 
-            pert = np.inf
-            fs[0, i_classes[0]].backward(retain_graph=True)
-            grad_orig = x.grad.data.cpu().numpy().copy()
+                for k in range(1, num_classes):
+                    # 清空梯度 # 防止其他标签的梯度影响当前标签梯度的计算
+                    if x.grad is not None:
+                        x.grad.zero_()
+                    # 对每个对应标签反向传播
+                    fs[0, i_classes[k]].backward(retain_graph=True)
+                    # 当前标签的梯度
+                    cur_grad = x.grad.data.cpu().numpy().copy()
+                    # 计算当前标签到正确标签的梯度差距
+                    w_k = cur_grad - grad_orig
+                    # 计算当前标签输出和正确标签输出之间的差异
+                    f_k = (fs[0, i_classes[k]] - fs[0, i_classes[0]]).data.cpu().numpy()
+                    # 计算归一化的扰动大小
+                    pert_k = abs(f_k) / np.linalg.norm(w_k.flatten())
+                    # 选择较大的损失并替换
+                    if pert_k > pert:
+                        pert = pert_k
+                        w = w_k
 
-            for k in range(1, num_classes):
-                if x.grad is not None:
-                    x.grad.zero_()
+                # 防止 pert 为 0 # 将扰动的大小进行归一化，并维持朝梯度w方向
+                r_i = (pert + 1e-4) * w / np.linalg.norm(w)
+                r_tot = np.float32(r_tot + r_i)
 
-                fs[0, i_classes[k]].backward(retain_graph=True)
-                cur_grad = x.grad.data.cpu().numpy().copy()
+                # 添加扰动到原图像 生成 对抗样本
+                x = image + (1 + self.overshoot) * torch.from_numpy(r_tot).to(self.device)
+                x.requires_grad = True
 
-                # set new w_k and new f_k
-                w_k = cur_grad - grad_orig
-                f_k = (fs[0, i_classes[k]] - fs[0, i_classes[0]]).data.cpu().numpy()
+                # 获取添加扰动后图像的标签
+                fs = self.model(x)
+                k_i = np.argmax(fs.data.cpu().numpy().flatten())
 
-                pert_k = abs(f_k) / np.linalg.norm(w_k.flatten())
-
-                # determine which w_k to use
-                if pert_k < pert:
-                    pert = pert_k
-                    w = w_k
-
-            # compute r_i and r_tot
-            # Added 1e-4 for numerical stability
-            r_i = (pert + 1e-4) * w / np.linalg.norm(w)
-            r_tot = np.float32(r_tot + r_i)
-
-            pert_image = image + (1 + self.overshoot) * torch.from_numpy(r_tot).to(self.device)
-            # x = Variable(pert_image, requires_grad=True)
-            x = pert_image.clone().detach().requires_grad_(True)
-            fs = self.model(x)
-            k_i = np.argmax(fs.data.cpu().numpy().flatten())
-
-            loop_i += 1
-        # r_tot = (1 + self.overshoot) * r_tot
-        # return r_tot, loop_i, label, k_i, pert_image
-        return pert_image
+        return x

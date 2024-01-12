@@ -29,7 +29,7 @@ class BaseModel:
         """
         return image, target
 
-    def test_attack(self, model, dataloader, max_counter=999999, **kwargs):
+    def test_attack(self, model, dataloader, max_counter=999999, **kwargs) -> float:
         """
         测试模型正确率
         :param model: 识别模型
@@ -71,7 +71,7 @@ class BaseModel:
 
         return total_accuracy / (max_counter * batch_size)
 
-    def totensor(self, tensor, requires_grad=False):
+    def totensor(self, tensor, requires_grad=False) -> torch.Tensor:
         """
         自动转换/深复制为tensor
         :param tensor: 要转换/复制的张量
@@ -79,9 +79,7 @@ class BaseModel:
         :return:
         """
         if isinstance(tensor, torch.Tensor):
-            tensor = tensor.clone().detach().to(self.device)
-            tensor.requires_grad = requires_grad
-            return tensor
+            return tensor.clone().detach().to(self.device).requires_grad_(requires_grad)
         elif isinstance(tensor, numpy.ndarray):
             return torch.from_numpy(tensor).to(self.device).requires_grad_(requires_grad)
         else:

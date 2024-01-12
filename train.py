@@ -42,8 +42,10 @@ def main():
     # 交叉熵损失函数
     loss_fn = nn.CrossEntropyLoss().to(device)
 
-    # 网络模型，数据，损失函数
+    # 网络模型
     # https://github.com/kuangliu/pytorch-cifar
+
+    # 选择要训练的模型
     # model = SimpleDLA()
     # model = VGG('VGG19')
     model = ResNet18()

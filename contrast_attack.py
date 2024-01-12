@@ -4,16 +4,15 @@
 # @File    : contrast_attack.py
 # @Description :
 import torch
-from torch import nn
 from torch.utils.data.dataloader import DataLoader
 import torchvision
 import matplotlib.pyplot as plt
 import warnings
 
-# FGSM, I_FGSM, MI_FGSM, L_BFGS, DeepFool, CW, JSMA, ONE_PIXEL, UPSET, ResidualModel
-from attack import *
-
+# 识别模型
 from models import ResNet18
+# 对抗模型
+from attack import FGSM, I_FGSM, MI_FGSM, L_BFGS, DeepFool, CW, JSMA, ONE_PIXEL, UPSET, ResidualModel
 
 # 忽略特定类型的警告
 warnings.filterwarnings("ignore", category=UserWarning, module="matplotlib")
@@ -48,41 +47,98 @@ def main():
 
     datasets = torchvision.datasets.CIFAR10("./datasets", train=False, transform=transform)
 
-    dataloader = DataLoader(datasets, batch_size=1, shuffle=True, num_workers=0, drop_last=True)
+    dataloader = torch.utils.data.dataloader.DataLoader(datasets, batch_size=1, shuffle=True, num_workers=0,
+                                                        drop_last=True)
 
     # 指定设备
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # 交叉熵损失函数
-    criterion = nn.CrossEntropyLoss().to(device)
+    criterion = torch.nn.CrossEntropyLoss().to(device)
 
+    # 识别模型
     model = ResNet18().to(device)
     model.load_state_dict(torch.load("./model/ResNet/train_100_0.9126999974250793.pth"))
-    # (batch_size, 3, 32, 32) -> (batch_size, 10)
 
+    # 扰动生成模型
     residual_model = ResidualModel().to(device)
     residual_model.load_state_dict(torch.load("./model/UPSET/target_0/0.9653946161270142.pth"))
-    print("预训练模型加载完成")
 
-    # attacker = CW(model=model, criterion=criterion)
-    # attacker = MI_FGSM(model=model, criterion=criterion)
-    attacker = JSMA(model=model)
+    print("预训练模型加载完成")
+    method = "deepfool"
+    method = method.upper()
+    if method == "L-BFGS":
+        # L-BFGS
+        attacker = L_BFGS(model=model, criterion=criterion)
+    elif method == "FGSM":
+        # FGSM
+        attacker = FGSM(model=model, criterion=criterion)
+    elif method == "I-FGSM":
+        # I-FGSM
+        attacker = I_FGSM(model=model, criterion=criterion)
+    elif method == "JSMA":
+        # JSMA
+        attacker = JSMA(model=model)
+    elif method == "ONE-PIXEL":
+        # ONE-PIXEL
+        attacker = ONE_PIXEL(model=model)
+    elif method == "C&W":
+        # C&W
+        attacker = CW(model=model, criterion=criterion)
+    elif method == "DEEPFOOL":
+        # DEEPFOOL
+        # attacker = DeepFool(model=model)
+        attacker = DeepFool(model=model, overshoot=2, iters=100)
+    elif method == "MI-FGSM":
+        # MI-FGSM
+        attacker = MI_FGSM(model=model, criterion=criterion)
+    elif method == "UPSET":
+        # UPSET
+        attacker = UPSET(model=residual_model)
+    else:
+        print(f"Unknown Method: {method}")
+        return
 
     print("攻击模型已创建")
 
     model.eval()
+    # 开始测试
     for image, target in dataloader:
         image, target = image.to(device), target.to(device)
         output = model(image)
 
+        # 生成攻击标签 # 这里只是单纯错开正确标签，可以换成想要的攻击标签
         attack_target = [(i + 1) % 10 for i in target]
 
-        attack_image = attacker.attack(image, attack_target)
+        print("正在生成攻击样本...")
+        # 生成对抗样本
+        # ------------------------------------
+        if method == "L-BFGS":
+            attack_image = attacker.attack(image, attack_target)
+        elif method == "FGSM":
+            attack_image = attacker.attack(image, target)
+        elif method == "I-FGSM":
+            attack_image = attacker.attack(image, target)
+        elif method == "JSMA":
+            attack_image = attacker.attack(image, attack_target)
+        elif method == "ONE-PIXEL":
+            attack_image = attacker.attack(image, target, is_targeted=False)
+        elif method == "C&W":
+            attack_image = attacker.attack(image, attack_target)
+        elif method == "DEEPFOOL":
+            attack_image = attacker.attack(image)
+        elif method == "MI-FGSM":
+            attack_image = attacker.attack(image, target)
+        elif method == "UPSET":
+            attack_image = attacker.attack(image)
+        else:
+            print(f"Unknown Method: {method}")
+            return
+        # ------------------------------------
+
         attack_output = model(attack_image)
-
-        print(output.argmax(1))
-        print(attack_output.argmax(1))
-
+        print("生成完成.")
+        # 使用matplotlib展示对比
         show(
             [image, attack_image],
             [
@@ -91,7 +147,7 @@ def main():
             ]
         )
 
-        input("任意输入继续生成")
+        input("任意输入回车继续生成...")
 
 
 if __name__ == "__main__":

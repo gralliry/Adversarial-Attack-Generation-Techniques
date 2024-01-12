@@ -83,15 +83,12 @@ class JSMA(BaseModel):
                 # 梯度清零
                 if pert_image.grad is not None:
                     pert_image.grad.zero_()
-                # 对每个图像进行反向传播(即使 batch_size 只为 1 )
-                for i, subtarget in enumerate(attack_target):
-                    output[i, subtarget].backward(retain_graph=True)
+                # 对每个图像进行反向传播
+                output[0, attack_target[0]].backward(retain_graph=True)
                 # 生成扰动点和扰动大小
                 index, pix_sign = self.saliency_map(pert_image, mask)
                 # 添加 扰动 到 对抗样本
                 pert_image.data[index] += pix_sign * self.alpha * self.gamma
-
-                # print(pert_image.data[index])
                 # 达到极限的点不再参与更新
                 if not -self.gamma <= pert_image.data[index] <= self.gamma:
                     # 限制扰动
