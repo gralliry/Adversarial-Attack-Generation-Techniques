@@ -1,0 +1,19 @@
+
+__pycache__/
+
+.idea/
+
+.vscode/
+# 模型参数存放文件夹 # 模型文件过大
+model/VGG/
+model/ResNet/
+model/SimpleDLA/
+# 数据集存放文件夹
+datasets/cifar-10-batches-py/
+datasets/cifar-10-python.tar.gz
+# 虚拟环境
+venv/
+# tensorboard 记录的训练过程
+tb/
+# contrast_attack 生成的攻击对比图像
+report/
