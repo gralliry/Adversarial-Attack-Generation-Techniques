@@ -15,5 +15,3 @@ datasets/cifar-10-python.tar.gz
 venv/
 # tensorboard 记录的训练过程
 tb/
-# contrast_attack 生成的攻击对比图像
-report/
