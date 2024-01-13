@@ -12,14 +12,16 @@ class MI_FGSM(BaseModel):
     def __init__(self, model, criterion, epsilon=0.1, decay_factor=0.5, iters=10, cuda=True):
         """
         MI_FGSM
+
+        https://arxiv.org/abs/1710.06081
+
+        https://github.com/Jeffkang-94/pytorch-adversarial-attack/blob/master/attack/mifgsm.py
         :param model: 模型
         :param criterion: 损失函数
         :param epsilon: 扰动
         :param decay_factor: 衰减因子
         :param iters: 迭代次数
         :param cuda: 是否启动cuda
-        https://arxiv.org/abs/1710.06081
-        https://github.com/Jeffkang-94/pytorch-adversarial-attack/blob/master/attack/mifgsm.py
         """
         super().__init__(model=model, cuda=cuda)
 

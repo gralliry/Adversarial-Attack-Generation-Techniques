@@ -21,7 +21,7 @@ class BaseModel:
 
     def test_attack_args(self, image, target, **kwargs):
         """
-        攻击测试参数，必须对应self.attack()中的参数
+        攻击测试参数，返回参数必须对应self.attack()中的参数
         :param image: 原图像
         :param target: 正确的标签值
         :param kwargs: 其他参数

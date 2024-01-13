@@ -12,9 +12,14 @@ from .model import BaseModel
 class JSMA(BaseModel):
     def __init__(self, model, alpha=3.0, gamma=3.0, iters=20, cuda=True):
         """
+        JSMA
+
         https://arxiv.org/abs/1511.07528
+
         https://github.com/probabilistic-jsmas/probabilistic-jsmas
+
         https://github.com/guidao20/MJSMA_JSMA/blob/master/MJSMA_JSMA.py
+
         https://github.com/FenHua/Adversarial-Examples/blob/master/%E9%BB%91%E7%9B%92/JSMA/JSMA.ipynb
         :param model: 模型
         :param alpha: 扰动步长

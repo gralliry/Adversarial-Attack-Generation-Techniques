@@ -10,9 +10,11 @@ from .model import BaseModel
 
 
 class I_FGSM(BaseModel):
-    def __init__(self, model, criterion, epsilon=0.01, iters=5, cuda=True):
+    def __init__(self, model, criterion, epsilon=0.2, iters=15, cuda=True):
         """
-        i-fgsm
+        I-FGSM
+
+        https://github.com/1Konny/FGSM?tab=readme-ov-file
         :param model: 模型
         :param criterion: 损失函数
         :param epsilon: 扰动幅度（最大扰动限制）
@@ -28,7 +30,6 @@ class I_FGSM(BaseModel):
     def attack(self, image, target):
         """
         I-FGSM
-        https://github.com/1Konny/FGSM?tab=readme-ov-file
         :param image: 需要处理的张量
         :param target: 正确的标签值
         :return: 生成的对抗样本
@@ -43,7 +44,7 @@ class I_FGSM(BaseModel):
             # 进行迭代
             for _ in range(self.iters):
                 # 正向传播
-                outputs = self.model(image)
+                outputs = self.model(pert_image)
                 self.model.zero_grad()
                 # 计算损失（针对目标攻击的负对数似然）
                 loss = self.criterion(outputs, target)

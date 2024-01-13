@@ -14,9 +14,13 @@ class DeepFool(BaseModel):
     def __init__(self, model, overshoot=0.02, iters=50, cuda=True):
         """
         DeepFool
+
         https://arxiv.org/abs/1511.04599
+
         https://github.com/LTS4/DeepFool
+
         https://github.com/aminul-huq/DeepFool
+
         https://medium.com/@aminul.huq11/pytorch-implementation-of-deepfool-53e889486ed4
         :param model: 模型
         :param overshoot: 最大限制

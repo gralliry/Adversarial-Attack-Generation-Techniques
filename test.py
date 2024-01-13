@@ -1,16 +1,26 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2024/1/6 19:00
 # @Author  : Liang Jinaye
-# @File    : test_attack.py
+# @File    : test.py
 # @Description :
 import torch
 from torch import nn
 from torch.utils.data.dataloader import DataLoader
 from torchvision import transforms, datasets
+import argparse
 
 from attack import *
 
 from models import ResNet18
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-m', '--method', required=True,
+                    choices=['L-BFGS', 'FGSM', 'I-FGSM', 'JSMA', 'ONE-PIXEL', 'C&W', 'DEEPFOOL', 'MI-FGSM', 'UPSET'],
+                    help="Test method: TEST, L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, C&W, DEEPFOOL, MI-FGSM, UPSET")
+parser.add_argument('-c', '--count', default=500, type=int,
+                    help="Number of tests (default is 500), but if the number of test datasets is less than this "
+                         "number, the number of test datasets prevails")
+args = parser.parse_args()
 
 
 def main():
@@ -36,12 +46,8 @@ def main():
     print("预训练模型加载完成")
 
     # -------------------------------------------
-    method = "deepfool"
-    method = method.upper()
-    if method == "TEST":
-        # TEST
-        attacker = BaseModel(model=model)
-    elif method == "L-BFGS":
+    method = args.method.upper()
+    if method == "L-BFGS":
         # L-BFGS
         attacker = L_BFGS(model=model, criterion=criterion)
         # attacker = L_BFGS(model=model, criterion=criterion, iters=2, epsilon=0.2)
@@ -84,7 +90,7 @@ def main():
         return
     # -------------------------------------------
     # 开始测试
-    attacker.test_attack(model=model, dataloader=test_dataloader, max_counter=500)
+    attacker.test_attack(model=model, dataloader=test_dataloader, max_counter=args.count)
 
 
 if __name__ == "__main__":

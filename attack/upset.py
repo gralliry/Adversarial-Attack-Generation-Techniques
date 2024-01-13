@@ -12,6 +12,7 @@ from .model import BaseModel
 class ResidualModel(nn.Module):
     """
     UPSET
+
     针对某个标签，输出图像，生成扰动，干净样本 + 扰动 = 攻击样本
     """
     def __init__(self):
@@ -32,6 +33,8 @@ class ResidualModel(nn.Module):
 class UPSET(BaseModel):
     def __init__(self, model: ResidualModel, alpha=0.01, iters=5, cuda=True):
         """
+        UPSET
+
         https://arxiv.org/abs/1707.01159
         :param model: 扰动生成模型 ! 扰动生成模型，不是识别模型
         :param alpha: 迭代步长

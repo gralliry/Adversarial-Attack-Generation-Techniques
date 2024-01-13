@@ -10,10 +10,16 @@ from .model import BaseModel
 
 
 class ONE_PIXEL(BaseModel):
-    def __init__(self, model, pixels_size=50, pop_size=100, iters=30, cr=0.75, factor=0.5, pixels_changed=1,
+    def __init__(self, model, pixels_size=40, pop_size=30, iters=15, cr=0.75, factor=0.5, pixels_changed=1,
                  cuda=True):
         """
         ONE_PIXEL
+
+        https://arxiv.org/abs/1710.08864
+
+        https://github.com/DebangLi/one-pixel-attack-pytorch
+
+        https://github.com/Hyperparticle/one-pixel-attack-keras
         :param model: 模型
         :param iters: 迭代次数
         :param pixels_size: 预选的像素数量/种群个数
@@ -22,8 +28,6 @@ class ONE_PIXEL(BaseModel):
         :param factor: 缩放因子 N = a + F*(b-c)，产生变异个体
         :param pixels_changed: 改变的像素数量
         :param cuda: 是否启动cuda
-        https://arxiv.org/abs/1710.08864
-        https://github.com/Hyperparticle/one-pixel-attack-keras
         """
         super().__init__(model=model, cuda=cuda)
 
@@ -105,9 +109,11 @@ class ONE_PIXEL(BaseModel):
         assert image.size(0) == 1, ValueError("只接受 batch_size = 1 的数据")
         image = self.totensor(image)
         # 使用均匀分布 X~U(0,31) Y~U(0,31) 来生成 X, Y
-        pos_candidates = np.random.randint(0, image.size(2), size=(self.pixels_size, 2))
+        coordinates = np.mgrid[0:image.size(2), 0:image.size(3)].reshape(2, -1).T
+        pos_candidates = coordinates[np.random.choice(coordinates.shape[0], self.pixels_size, replace=False)]
+        # pos_candidates = np.random.randint(0, image.size(2), size=(self.pixels_size, 2))
         # 使用正态分布 R~N(0.5, 0.5) G~N(0.5, 0.5) B~N(0.5, 0.5) 来生成 R, G, B ?
-        rgb_candidates = np.random.random(size=(self.pixels_size, self.pop_size, 3))
+        rgb_candidates = np.random.normal(0.5, 0.5, size=(self.pixels_size, self.pop_size, 3))
         # 评估每个候选解的适应度
         fitness = self.evaluate(pos_candidates, rgb_candidates, image, target)
         # 迭代过程

@@ -13,6 +13,10 @@ class FGSM(BaseModel):
     def __init__(self, model, criterion, epsilon=0.06, cuda=True):
         """
         FGSM
+
+        https://github.com/1Konny/FGSM?tab=readme-ov-file
+
+        https://github.com/Harry24k/FGSM-pytorch/blob/master/FGSM.ipynb
         :param model: 模型
         :param criterion: 损失函数
         :param epsilon: 扰动幅度
@@ -29,8 +33,6 @@ class FGSM(BaseModel):
         :param target: 正确的标签值
         :return: 生成的对抗样本
         """
-        # https://github.com/1Konny/FGSM?tab=readme-ov-file
-        # https://github.com/Harry24k/FGSM-pytorch/blob/master/FGSM.ipynb
         # 设置输入张量的 requires_grad 为 True 计算梯度
         pert_image = self.totensor(image, requires_grad=True)
         target = self.totensor(target)

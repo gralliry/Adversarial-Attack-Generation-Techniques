@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2024/1/9 11:23
 # @Author  : Liang Jinaye
-# @File    : contrast_attack.py
+# @File    : contrast.py
 # @Description :
 import torch
 from torch.utils.data.dataloader import DataLoader
@@ -9,11 +9,21 @@ import torchvision
 import matplotlib.pyplot as plt
 import warnings
 
+import argparse
+
 # 识别模型
 from models import ResNet18
 # 对抗模型
 from attack import FGSM, I_FGSM, MI_FGSM, L_BFGS, DeepFool, CW, JSMA, ONE_PIXEL, UPSET, ResidualModel
 
+parser = argparse.ArgumentParser()
+# 运行时输入需要测试的方法
+parser.add_argument('-m', '--method',
+                    required=True,
+                    choices=['L-BFGS', 'FGSM', 'I-FGSM', 'JSMA', 'ONE-PIXEL', 'C&W', 'DEEPFOOL', 'MI-FGSM', 'UPSET'],
+                    help="Test method: TEST, L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, C&W, DEEPFOOL, MI-FGSM, UPSET")
+
+args = parser.parse_args()
 # 忽略特定类型的警告
 warnings.filterwarnings("ignore", category=UserWarning, module="matplotlib")
 
@@ -27,7 +37,7 @@ def show(images, texts):
 
     for i, image in enumerate(images):
         # 将张量转换为 NumPy 数组
-        numpy_image = image.clone().detach().squeeze(dim=0).permute(1, 2, 0).cpu().numpy()
+        numpy_image = torch.clamp(image, 0, 1).detach().squeeze(dim=0).permute(1, 2, 0).cpu().numpy()
 
         # 展示图像
         axes[i].imshow(numpy_image)
@@ -47,8 +57,7 @@ def main():
 
     datasets = torchvision.datasets.CIFAR10("./datasets", train=False, transform=transform)
 
-    dataloader = torch.utils.data.dataloader.DataLoader(datasets, batch_size=1, shuffle=True, num_workers=0,
-                                                        drop_last=True)
+    dataloader = torch.utils.data.dataloader.DataLoader(datasets, batch_size=1, shuffle=True, num_workers=0)
 
     # 指定设备
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -65,8 +74,8 @@ def main():
     residual_model.load_state_dict(torch.load("./model/UPSET/target_0/0.9653946161270142.pth"))
 
     print("预训练模型加载完成")
-    method = "deepfool"
-    method = method.upper()
+    # ----------------------------------------------------------
+    method = args.method.upper()
     if method == "L-BFGS":
         # L-BFGS
         attacker = L_BFGS(model=model, criterion=criterion)
@@ -81,7 +90,8 @@ def main():
         attacker = JSMA(model=model)
     elif method == "ONE-PIXEL":
         # ONE-PIXEL
-        attacker = ONE_PIXEL(model=model)
+        # attacker = ONE_PIXEL(model=model)
+        attacker = ONE_PIXEL(model=model, pixels_changed=10)
     elif method == "C&W":
         # C&W
         attacker = CW(model=model, criterion=criterion)
@@ -98,6 +108,7 @@ def main():
     else:
         print(f"Unknown Method: {method}")
         return
+    # ----------------------------------------------------------
 
     print("攻击模型已创建")
 
