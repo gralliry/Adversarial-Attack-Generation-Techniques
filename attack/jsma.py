@@ -72,7 +72,7 @@ class JSMA(BaseModel):
         """
         assert image.size(0) == 1, ValueError("只接受 batch_size = 1 的数据")
 
-        pert_image = self.totensor(image, requires_grad=True)
+        pert_image = image.clone().detach().requires_grad_(True)
         attack_target = self.totensor(attack_target)
         # 定义搜索域，修改后的位置置零，下一次不再计算
         mask = np.ones(pert_image.shape)

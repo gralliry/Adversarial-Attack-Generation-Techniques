@@ -47,7 +47,7 @@ class L_BFGS(BaseModel):
         self.model.eval()
 
         # 生成扰动 # 正则化项，旨在控制扰动的大小，防止扰动过大
-        r = (self.epsilon * torch.rand(pert_image.size())).to(self.device).requires_grad_(True)
+        r = (self.epsilon * torch.rand(pert_image.shape)).to(self.device).requires_grad_(True)
         # 优化器 # 创建一个Adam优化器，用于更新扰动 r 的数值
         optimizer = optim.Adam([r], lr=self.lr)
         for _ in range(self.iters):

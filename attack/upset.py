@@ -50,7 +50,7 @@ class UPSET(BaseModel):
         return (image,)
 
     def attack(self, image):
-        pert_image = self.totensor(image)
+        pert_image = image.clone().detach().requires_grad_(True)
 
         for _ in range(self.iters):
             # 输出扰动

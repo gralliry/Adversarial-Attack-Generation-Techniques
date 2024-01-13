@@ -34,7 +34,7 @@ class I_FGSM(BaseModel):
         :param target: 正确的标签值
         :return: 生成的对抗样本
         """
-        pert_image = self.totensor(image, requires_grad=True)
+        pert_image = image.clone().detach().requires_grad_(True)
         target = self.totensor(target)
         # 迭代步长
         alpha = self.epsilon / self.iters

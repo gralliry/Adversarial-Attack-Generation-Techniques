@@ -43,9 +43,9 @@ class DeepFool(BaseModel):
         :return: 生成的对抗样本
         """
         assert image.size(0) == 1, ValueError("只接受 batch_size = 1 的数据")
-        image = self.totensor(image)
+        image = image.clone().detach()
         # pert_image = self.totensor(image)
-        x = self.totensor(image, requires_grad=True)
+        x = image.clone().detach().requires_grad_(True)
         # 获取正确的预测输出
         f_image = self.model(image)
         fs = self.model(x)

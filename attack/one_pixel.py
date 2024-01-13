@@ -107,7 +107,7 @@ class ONE_PIXEL(BaseModel):
 
     def attack(self, image, target, is_targeted=False):
         assert image.size(0) == 1, ValueError("只接受 batch_size = 1 的数据")
-        image = self.totensor(image)
+        image = image.clone().detach().requires_grad_(True)
         # 使用均匀分布 X~U(0,31) Y~U(0,31) 来生成 X, Y
         coordinates = np.mgrid[0:image.size(2), 0:image.size(3)].reshape(2, -1).T
         pos_candidates = coordinates[np.random.choice(coordinates.shape[0], self.pixels_size, replace=False)]
