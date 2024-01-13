@@ -51,7 +51,7 @@ class MI_FGSM(BaseModel):
         self.model.eval()
         with torch.set_grad_enabled(True):
             for _ in range(self.iters):
-                # 克隆原始图像以避免修改它
+                # 设置梯度
                 pert_image.requires_grad = True
                 # 前向传播
                 output = self.model(pert_image)
