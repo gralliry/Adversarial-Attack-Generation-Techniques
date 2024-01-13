@@ -21,7 +21,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-m', '--method',
                     required=True,
                     choices=['L-BFGS', 'FGSM', 'I-FGSM', 'JSMA', 'ONE-PIXEL', 'C&W', 'DEEPFOOL', 'MI-FGSM', 'UPSET'],
-                    help="Test method: TEST, L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, C&W, DEEPFOOL, MI-FGSM, UPSET")
+                    help="Test method: L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, C&W, DEEPFOOL, MI-FGSM, UPSET")
 
 args = parser.parse_args()
 # 忽略特定类型的警告

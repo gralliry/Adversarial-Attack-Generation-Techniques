@@ -11,8 +11,15 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data.dataloader import DataLoader
 from torchvision import transforms
 from torchvision.datasets import CIFAR10
+import argparse
 
 from models import *
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument("-e", "--epoch", default=100, type=int, help="训练次数")
+
+args = parser.parse_args()
 
 
 def main():
@@ -45,7 +52,7 @@ def main():
     # 网络模型
     # https://github.com/kuangliu/pytorch-cifar
 
-    # 选择要训练的模型
+    # ------------------选择要训练的模型------------------
     # model = SimpleDLA()
     # model = VGG('VGG19')
     model = ResNet18()
@@ -62,7 +69,10 @@ def main():
     # model = EfficientNetB0()
     # model = RegNetX_200MF()
     # model = SimpleDLA()
-    model.load_state_dict(torch.load("./model/ResNet/train_100_0.9126999974250793.pth"))
+
+    # ------------------这里可以加载已经训练过的模型参数文件来继续训练------------------
+    # model.load_state_dict(torch.load("./model/ResNet/train_100_0.9126999974250793.pth"))
+
     model = model.to(device)
 
     model_name = model.__class__.__name__
@@ -72,24 +82,23 @@ def main():
     损失函数上，分别对神经网络参数的常见优化器SGD(stochastic gradient descent 随机梯度下降)、
     和Adam（Adaptive Moment Estimation 自适应矩估计）两种优化器进行了挑选，在实际效果上，发现SGD随机梯度下降对本实验的优化更好。
     """
+    # 学习率
     learning_rate = 1e-3
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
     # 余弦退火调整学习率
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
 
-    # 设置训练网络参数
     # 记录训练次数
     total_train_step = 0
-    # 记录测试次数
-    total_test_step = 0
-    # 训练的轮数
-    epoch = 100
+
     if not os.path.exists(f"./tb/{model_name}"):
         os.mkdir(f"./tb/{model_name}")
     if not os.path.exists(f"./model/{model_name}"):
         os.mkdir(f"./model/{model_name}")
+    # 训练过程记录器
     writer = SummaryWriter(f"./tb/{model_name}")
-    for i in range(epoch):
+    # 训练的轮数
+    for i in range(args.epoch):
         print(f"第 {i + 1} 轮训练开始")
         model.train()
         for imgs, targets in train_dataloader:
@@ -130,12 +139,13 @@ def main():
                 total_num += test_dataloader.batch_size
                 total_accuracy += accuracy
 
+        # 记录第total_train_step次时的准确率和损失
         print(f"整体测试集上的loss: {total_test_loss / total_num}")
         writer.add_scalar("test_loss", total_test_loss / total_num, total_train_step)
         print(f"整体测试集上的正确率: {total_accuracy / total_num}")
         writer.add_scalar("test_accuracy", total_accuracy / total_num, total_train_step)
-        total_test_step += 1
 
+        # 保存训练参数文件
         torch.save(model.state_dict(),
                    f"./model/{model_name}/train_{i + 1}_{total_accuracy / total_num}.pth")
 

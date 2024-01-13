@@ -2,23 +2,32 @@
 # @Time    : 2024/1/10 13:10
 # @Author  : Liang Jinaye
 # @File    : train_residual_model.py
-# @Description :
+# @Description : 这是用来训练UPSET方法需要的扰动生成模型
+import os.path
+
 import torch
 from torch import nn
 from torch.utils.data.dataloader import DataLoader
 from torchvision import transforms
 from torchvision.datasets import CIFAR10
+import argparse
+
 from models import ResNet18
 
 from attack import ResidualModel
 
+parser = argparse.ArgumentParser()
 
-def main(attack_target=0):
-    """
+parser.add_argument("-t", "--target", required=True, type=int, choices=range(10), help="针对的target(0到9)")
+parser.add_argument("-e", "--epoch", default=100, type=int, help="训练次数")
+parser.add_argument("-lr", "--learning_rate", default=1e-3, type=float, help="学习率")
 
-    :param attack_target: 比如这里针对标签值0即plane进行攻击
-    :return:
-    """
+args = parser.parse_args()
+
+
+def main():
+    attack_target = args.target
+
     transform_train = transforms.Compose([
         transforms.RandomCrop(32, padding=4),
         transforms.RandomHorizontalFlip(),
@@ -41,29 +50,29 @@ def main(attack_target=0):
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+    # -------------------请在这里加载识别模型-------------------
     right_model = ResNet18().to(device)
     right_model.load_state_dict(torch.load("./model/ResNet/train_100_0.9126999974250793.pth"))
     right_model.eval()
 
     residual_model = ResidualModel().to(device)
-    residual_model.load_state_dict(torch.load("./model/UPSET/target_0/0.9653946161270142.pth"))
+    # residual_model.load_state_dict(torch.load("./model/UPSET/target_0/0.9653946161270142.pth"))
 
     loss_fn = nn.CrossEntropyLoss().to(device)
 
-    learning_rate = 1e-3
+    learning_rate = args.learning_rate
     optimizer = torch.optim.SGD(residual_model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
     # 余弦退火调整学习率
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
 
-    # 比如这里针对标签值0即plane进行攻击
+    # 这里针对标签值
     attack_targets = torch.tensor([attack_target for _ in range(train_dataloader.batch_size)], device=device)
 
-    #
+    # 记录正确率
     attacked_accuracy = 0
     predict_accuracy = 0
     total_num = 0
-    epoch = 100
-    for i in range(epoch):
+    for i in range(args.epoch):
         print(f"第 {i + 1} 轮训练开始")
         residual_model.train()
         for images, targets in train_dataloader:
@@ -92,6 +101,9 @@ def main(attack_target=0):
 
         # 调整学习率
         scheduler.step()
+
+        if not os.path.exists(f"./model/UPSET/target_{attack_target}"):
+            os.makedirs(f"./model/UPSET/target_{attack_target}")
 
         torch.save(residual_model.state_dict(),
                    f"./model/UPSET/target_{attack_target}/{attacked_accuracy / total_num}.pth")
