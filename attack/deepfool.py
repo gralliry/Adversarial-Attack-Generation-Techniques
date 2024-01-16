@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2024/1/7 18:48
-# @Author  : Liang Jinaye
+# @Author  : Jianye Liang
 # @File    : deepfool.py
 # @Description :
 import torch

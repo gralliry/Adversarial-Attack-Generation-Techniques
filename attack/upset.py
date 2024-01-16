@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2024/1/9 10:54
-# @Author  : Liang Jinaye
+# @Author  : Jianye Liang
 # @File    : upset.py
 # @Description :
 import torch

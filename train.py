@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2023/11/17 21:12
-# @Author  : Liang Jinaye
+# @Author  : Jianye Liang
 # @File    : 20_Train.py
 # @Description :
 import os

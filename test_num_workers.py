@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2024/1/7 12:39
-# @Author  : Liang Jinaye
+# @Author  : Jianye Liang
 # @File    : test_num_workers.py
 # @Description : 通过运行的时间，选择最佳的num_workers数
 from time import time

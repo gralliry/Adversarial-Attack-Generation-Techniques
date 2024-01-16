@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2024/1/5 18:30
-# @Author  : Liang Jinaye
+# @Author  : Jianye Liang
 # @File    : cnn.py
 # @Description :
 from torch import nn

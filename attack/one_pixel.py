@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2024/1/8 15:54
-# @Author  : Liang Jinaye
+# @Author  : Jianye Liang
 # @File    : one_pixel.py
 # @Description :
 import torch

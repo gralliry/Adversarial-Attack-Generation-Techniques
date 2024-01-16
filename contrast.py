@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2024/1/9 11:23
-# @Author  : Liang Jinaye
+# @Author  : Jianye Liang
 # @File    : contrast.py
 # @Description :
 import torch
@@ -60,7 +60,8 @@ def main():
     dataloader = torch.utils.data.dataloader.DataLoader(datasets, batch_size=1, shuffle=True, num_workers=0)
 
     # 指定设备
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(device)
 
     # 交叉熵损失函数
     criterion = torch.nn.CrossEntropyLoss().to(device)

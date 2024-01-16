@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2024/1/10 13:10
-# @Author  : Liang Jinaye
+# @Author  : Jianye Liang
 # @File    : train_residual_model.py
 # @Description : 这是用来训练UPSET方法需要的扰动生成模型
 import os.path

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2024/1/7 20:52
-# @Author  : Liang Jinaye
+# @Author  : Jianye Liang
 # @File    : l_bfgs.py
 # @Description :
 import torch

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2024/1/7 20:21
-# @Author  : Liang Jinaye
+# @Author  : Jianye Liang
 # @File    : jsma.py
 # @Description :
 import torch

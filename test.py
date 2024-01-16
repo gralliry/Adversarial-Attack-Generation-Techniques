@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2024/1/6 19:00
-# @Author  : Liang Jinaye
+# @Author  : Jianye Liang
 # @File    : test.py
 # @Description :
 import torch

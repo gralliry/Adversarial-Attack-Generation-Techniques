@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2024/1/8 20:34
-# @Author  : Liang Jinaye
+# @Author  : Jianye Liang
 # @File    : cw.py
 # @Description :
 import torch
