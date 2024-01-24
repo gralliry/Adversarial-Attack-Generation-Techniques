@@ -68,11 +68,11 @@ def main():
 
     # 识别模型
     model = ResNet18().to(device)
-    model.load_state_dict(torch.load("./model/ResNet/train_100_0.9126999974250793.pth"))
+    model.load_state_dict(torch.load("./parameter/ResNet/train_100_0.9126999974250793.pth"))
 
     # 扰动生成模型
     residual_model = ResidualModel().to(device)
-    residual_model.load_state_dict(torch.load("./model/UPSET/target_0/0.9653946161270142.pth"))
+    residual_model.load_state_dict(torch.load("./parameter/UPSET/target_0/0.9653946161270142.pth"))
 
     print("预训练模型加载完成")
     # ----------------------------------------------------------
@@ -91,14 +91,14 @@ def main():
         attacker = JSMA(model=model)
     elif method == "ONE-PIXEL":
         # ONE-PIXEL
-        # attacker = ONE_PIXEL(model=model)
+        # attacker = ONE_PIXEL(parameter=parameter)
         attacker = ONE_PIXEL(model=model, pixels_changed=10)
     elif method == "C&W":
         # C&W
         attacker = CW(model=model, criterion=criterion)
     elif method == "DEEPFOOL":
         # DEEPFOOL
-        # attacker = DeepFool(model=model)
+        # attacker = DeepFool(parameter=parameter)
         attacker = DeepFool(model=model, overshoot=2, iters=100)
     elif method == "MI-FGSM":
         # MI-FGSM

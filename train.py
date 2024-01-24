@@ -40,8 +40,8 @@ def main():
     test_datasets = CIFAR10("./datasets", train=False, transform=transform_test)
 
     # 数据加载器
-    train_dataloader = DataLoader(train_datasets, batch_size=128, shuffle=True, num_workers=4)
-    test_dataloader = DataLoader(test_datasets, batch_size=1, shuffle=False, num_workers=0)
+    train_dataloader = DataLoader(train_datasets, batch_size=256, shuffle=True, num_workers=4)
+    test_dataloader = DataLoader(test_datasets, batch_size=256, shuffle=False, num_workers=0)
 
     # 指定设备
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -53,27 +53,27 @@ def main():
     # https://github.com/kuangliu/pytorch-cifar
 
     # ------------------选择要训练的模型------------------
-    # model = SimpleDLA()
-    # model = VGG('VGG19')
+    # parameter = SimpleDLA()
+    # parameter = VGG('VGG19')
     model = ResNet18()
-    # model = PreActResNet18()
-    # model = GoogLeNet()
-    # model = DenseNet121()
-    # model = ResNeXt29_2x64d()
-    # model = MobileNet()
-    # model = MobileNetV2()
-    # model = DPN92()
-    # model = ShuffleNetG2()
-    # model = SENet18()
-    # model = ShuffleNetV2(1)
-    # model = EfficientNetB0()
-    # model = RegNetX_200MF()
-    # model = SimpleDLA()
-
-    # ------------------这里可以加载已经训练过的模型参数文件来继续训练------------------
-    # model.load_state_dict(torch.load("./model/ResNet/train_100_0.9126999974250793.pth"))
+    # parameter = PreActResNet18()
+    # parameter = GoogLeNet()
+    # parameter = DenseNet121()
+    # parameter = ResNeXt29_2x64d()
+    # parameter = MobileNet()
+    # parameter = MobileNetV2()
+    # parameter = DPN92()
+    # parameter = ShuffleNetG2()
+    # parameter = SENet18()
+    # parameter = ShuffleNetV2(1)
+    # parameter = EfficientNetB0()
+    # parameter = RegNetX_200MF()
+    # parameter = SimpleDLA()
 
     model = model.to(device)
+
+    # ------------------这里可以加载已经训练过的模型参数文件来继续训练------------------
+    model.load_state_dict(torch.load("./parameter/ResNet/train_100_0.9126999974250793.pth", map_location=device))
 
     model_name = model.__class__.__name__
 
@@ -90,11 +90,12 @@ def main():
 
     # 记录训练次数
     total_train_step = 0
+    total_train_loss = 0
 
     if not os.path.exists(f"./tb/{model_name}"):
         os.mkdir(f"./tb/{model_name}")
-    if not os.path.exists(f"./model/{model_name}"):
-        os.mkdir(f"./model/{model_name}")
+    if not os.path.exists(f"parameter/{model_name}"):
+        os.mkdir(f"parameter/{model_name}")
     # 训练过程记录器
     writer = SummaryWriter(f"./tb/{model_name}")
     # 训练的轮数
@@ -114,10 +115,11 @@ def main():
             optimizer.step()
 
             total_train_step += 1
+            total_train_loss += loss.item()
 
             if total_train_step % 100 == 0:
-                print(f"训练次数: {total_train_step}, Loss: {loss.item()}")
-                writer.add_scalar("train_loss", loss.item(), total_train_step)
+                print(f"训练次数: {total_train_step}, Loss: {total_train_loss / total_train_step}")
+                writer.add_scalar("train_loss", total_train_loss / total_train_step, total_train_step)
 
         # 测试
         model.eval()
@@ -147,7 +149,7 @@ def main():
 
         # 保存训练参数文件
         torch.save(model.state_dict(),
-                   f"./model/{model_name}/train_{i + 1}_{total_accuracy / total_num}.pth")
+                   f"./parameter/{model_name}/train_{i + 1}_{total_accuracy / total_num}.pth")
 
         # 调整学习率
         scheduler.step()

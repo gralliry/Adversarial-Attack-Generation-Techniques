@@ -52,11 +52,11 @@ def main():
 
     # -------------------请在这里加载识别模型-------------------
     right_model = ResNet18().to(device)
-    right_model.load_state_dict(torch.load("./model/ResNet/train_100_0.9126999974250793.pth"))
+    right_model.load_state_dict(torch.load("。/parameter/ResNet/train_100_0.9126999974250793.pth"))
     right_model.eval()
 
     residual_model = ResidualModel().to(device)
-    # residual_model.load_state_dict(torch.load("./model/UPSET/target_0/0.9653946161270142.pth"))
+    # residual_model.load_state_dict(torch.load("./parameter/UPSET/target_0/0.9653946161270142.pth"))
 
     loss_fn = nn.CrossEntropyLoss().to(device)
 
@@ -102,11 +102,11 @@ def main():
         # 调整学习率
         scheduler.step()
 
-        if not os.path.exists(f"./model/UPSET/target_{attack_target}"):
-            os.makedirs(f"./model/UPSET/target_{attack_target}")
+        if not os.path.exists(f"./parameter/UPSET/target_{attack_target}"):
+            os.makedirs(f"./parameter/UPSET/target_{attack_target}")
 
         torch.save(residual_model.state_dict(),
-                   f"./model/UPSET/target_{attack_target}/{attacked_accuracy / total_num}.pth")
+                   f"./parameter/UPSET/target_{attack_target}/{attacked_accuracy / total_num}.pth")
 
         print(f"预测后识别成功率: {predict_accuracy / total_num}")
         print(f"攻击后识别错误率: {attacked_accuracy / total_num}")

@@ -59,7 +59,7 @@ class L_BFGS(BaseModel):
 
             # 反向传播，修正参数
             optimizer.zero_grad()
-            loss.backward(retain_graph=True)
+            loss.backward()
             optimizer.step()
 
         return pert_image

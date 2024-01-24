@@ -38,10 +38,10 @@ def main():
     criterion = nn.CrossEntropyLoss().to(device)
     # 识别模型
     model = ResNet18().to(device)
-    model.load_state_dict(torch.load("./model/ResNet/train_100_0.9126999974250793.pth"))
+    model.load_state_dict(torch.load("./parameter/ResNet/train_100_0.9126999974250793.pth"))
 
-    # model = models.vgg19().to(device)
-    # model.load_state_dict(torch.load("./model/pretrained/checkpoints/vgg19-dcbb9e9d.pth"))
+    # parameter = models.vgg19().to(device)
+    # parameter.load_state_dict(torch.load("./parameter/pretrained/checkpoints/vgg19-dcbb9e9d.pth"))
 
     print("预训练模型加载完成")
 
@@ -50,41 +50,41 @@ def main():
     if method == "L-BFGS":
         # L-BFGS
         attacker = L_BFGS(model=model, criterion=criterion)
-        # attacker = L_BFGS(model=model, criterion=criterion, iters=2, epsilon=0.2)
+        # attacker = L_BFGS(parameter=parameter, criterion=criterion, iters=2, epsilon=0.2)
     elif method == "FGSM":
         # FGSM
         attacker = FGSM(model=model, criterion=criterion)
-        # attacker = FGSM(model=model, criterion=criterion, epsilon=0.2)
+        # attacker = FGSM(parameter=parameter, criterion=criterion, epsilon=0.2)
     elif method == "I-FGSM":
         # I-FGSM
         attacker = I_FGSM(model=model, criterion=criterion)
-        # attacker = I_FGSM(model=model, criterion=criterion)
+        # attacker = I_FGSM(parameter=parameter, criterion=criterion)
     elif method == "JSMA":
         # JSMA
         attacker = JSMA(model=model)
-        # attacker = JSMA(model=model, alpha=6, gamma=6, iters=50)
+        # attacker = JSMA(parameter=parameter, alpha=6, gamma=6, iters=50)
     elif method == "ONE-PIXEL":
         # ONE-PIXEL
         attacker = ONE_PIXEL(model=model)
-        # attacker = ONE_PIXEL(model=model)
+        # attacker = ONE_PIXEL(parameter=parameter)
     elif method == "C&W":
         # C&W
         attacker = CW(model=model, criterion=criterion)
-        # attacker = CW(model=model, criterion=criterion, iters=1000)
+        # attacker = CW(parameter=parameter, criterion=criterion, iters=1000)
     elif method == "DEEPFOOL":
         # DEEPFOOL
         attacker = DeepFool(model=model)
-        # attacker = DeepFool(model=model, overshoot=2, iters=100)
+        # attacker = DeepFool(parameter=parameter, overshoot=2, iters=100)
     elif method == "MI-FGSM":
         # MI-FGSM
         attacker = MI_FGSM(model=model, criterion=criterion)
-        # attacker = MI_FGSM(model=model, criterion=criterion)
+        # attacker = MI_FGSM(parameter=parameter, criterion=criterion)
     elif method == "UPSET":
         # UPSET
         residual_model = ResidualModel().to(device)
-        residual_model.load_state_dict(torch.load("./model/UPSET/target_0/0.9653946161270142.pth"))
+        residual_model.load_state_dict(torch.load("./parameter/UPSET/target_0/0.9653946161270142.pth"))
         attacker = UPSET(model=residual_model)
-        # attacker = UPSET(model=residual_model)
+        # attacker = UPSET(parameter=residual_model)
     else:
         print(f"Unknown Method: {method}")
         return
