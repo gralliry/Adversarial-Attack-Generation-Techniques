@@ -12,4 +12,4 @@ dataset/
 # 虚拟环境
 venv/
 # tensorboard 记录的训练过程
-tb/
+tensorboard/
