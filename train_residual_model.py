@@ -52,7 +52,7 @@ def main():
 
     # -------------------请在这里加载识别模型-------------------
     right_model = ResNet18().to(device)
-    right_model.load_state_dict(torch.load("。/parameter/ResNet/train_100_0.9126999974250793.pth"))
+    right_model.load_state_dict(torch.load("./parameter/ResNet/train_100_0.9126999974250793.pth"))
     right_model.eval()
 
     residual_model = ResidualModel().to(device)

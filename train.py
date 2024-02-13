@@ -92,12 +92,12 @@ def main():
     total_train_step = 0
     total_train_loss = 0
 
-    if not os.path.exists(f"./tb/{model_name}"):
-        os.mkdir(f"./tb/{model_name}")
-    if not os.path.exists(f"parameter/{model_name}"):
-        os.mkdir(f"parameter/{model_name}")
+    if not os.path.exists(f"./tensorboard/{model_name}"):
+        os.mkdir(f"./tensorboard/{model_name}")
+    if not os.path.exists(f"./parameter/{model_name}"):
+        os.mkdir(f"./parameter/{model_name}")
     # 训练过程记录器
-    writer = SummaryWriter(f"./tb/{model_name}")
+    writer = SummaryWriter(f"./tensorboard/{model_name}")
     # 训练的轮数
     for i in range(args.epoch):
         print(f"第 {i + 1} 轮训练开始")
