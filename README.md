@@ -28,7 +28,7 @@
 │
 ├── report  # 攻击效果展示图
 │
-├── tb      # tensorboard训练过程保存文件夹
+├── tensorboard      # tensorboard训练过程保存文件夹
 │
 ├── contrast.py          # 攻击效果展示，需要图形化界面
 │
