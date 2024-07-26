@@ -70,9 +70,7 @@ def main():
     model = ResNet18().to(device)
     model.load_state_dict(torch.load("./parameter/ResNet/train_100_0.9126999974250793.pth"))
 
-    # 扰动生成模型
-    residual_model = ResidualModel().to(device)
-    residual_model.load_state_dict(torch.load("./parameter/UPSET/target_0/0.9653946161270142.pth"))
+
 
     print("预训练模型加载完成")
     # ----------------------------------------------------------
@@ -85,7 +83,7 @@ def main():
         attacker = FGSM(model=model, criterion=criterion)
     elif method == "I-FGSM":
         # I-FGSM
-        attacker = I_FGSM(model=model, criterion=criterion)
+        attacker = I_FGSM(model=model, criterion=criterion, epsilon=1)
     elif method == "JSMA":
         # JSMA
         attacker = JSMA(model=model)
@@ -104,6 +102,9 @@ def main():
         # MI-FGSM
         attacker = MI_FGSM(model=model, criterion=criterion)
     elif method == "UPSET":
+        # 扰动生成模型
+        residual_model = ResidualModel().to(device)
+        residual_model.load_state_dict(torch.load("./parameter/UPSET/target_0/0.9653946161270142.pth"))
         # UPSET
         attacker = UPSET(model=residual_model)
     else:

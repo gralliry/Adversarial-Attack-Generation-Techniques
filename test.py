@@ -15,7 +15,7 @@ from models import ResNet18
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-m', '--method', required=True,
-                    choices=['L-BFGS', 'I-FGSM', 'JSMA', 'ONE-PIXEL', 'C&W', 'DEEPFOOL', 'MI-FGSM', 'UPSET'],
+                    choices=['L-BFGS', "FGSM", 'I-FGSM', 'JSMA', 'ONE-PIXEL', 'C&W', 'DEEPFOOL', 'MI-FGSM', 'UPSET'],
                     help="Test method: L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, C&W, DEEPFOOL, MI-FGSM, UPSET")
 parser.add_argument('-c', '--count', default=500, type=int,
                     help="Number of tests (default is 500), but if the number of test datasets is less than this "

@@ -1,15 +1,14 @@
-
 __pycache__/
 
 .idea/
-
 .vscode/
+
 # 模型参数存放文件夹 # 模型文件过大
 parameter/**/*.pth
 # 数据集存放文件夹
-dataset/
-!dataset/download.py
+datasets/
+!datasets/download.py
 # 虚拟环境
 venv/
 # tensorboard 记录的训练过程
-tensorboard/**/*
+tensorboard/
