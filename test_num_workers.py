@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Description: 通过运行的时间，选择最佳的num_workers数
+# @Description: Select the optimal number of num workers by running time
 from time import time
 import multiprocessing as mp
 import torch
@@ -16,8 +16,10 @@ if __name__ == "__main__":
 
     trainset = torchvision.datasets.CIFAR10(
         root='./datasets/',
-        train=True,  # 如果为True，从 training.pt 创建数据，否则从 test.pt 创建数据。
-        download=True,  # 如果为true，则从 Internet 下载数据集并将其放在根目录中。 如果已下载数据集，则不会再次下载。
+        train=True,
+        # If true, download the data set from the Internet and put it in the root directory.
+        # If the dataset has been downloaded, it will not be downloaded again.
+        download=True,
         transform=transform
     )
     print(f"num of CPU: {mp.cpu_count()}")

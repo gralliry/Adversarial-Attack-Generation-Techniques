@@ -1,89 +1,89 @@
-# 对抗样本生成技术
+# Adversarial Attack Generation Techniques
 
-## 文件介绍
+## File Overview
 
 ```
 │
-├── attack  # 攻击模型类存放文件夹
+├── attack  # Folder containing attack model classes
 │    └── fgsm.py
 │    └── ...
 │
-├── datasets          # 数据集存放文件夹
-│    └── downlaod.py  # 数据集下载文件，运行会下载对应的数据集
+├── datasets          # Folder for datasets
+│    └── download.py  # Script to download datasets
 │
-├── parameter         # 模型参数存放文件
+├── parameter         # Folder for model parameters
 │    └── ResNet
 │    │    └── ...pth
 │    └── ...
 │    │ 
-│    └── UPSET          # UPSET使用的扰动生成模型参数文件夹
-│         └── target_0  # 扰动生成模型参对应的target文件夹
+│    └── UPSET          # Folder for perturbation generation model parameters used by UPSET
+│         └── target_0  # Target folders corresponding to perturbation generation model parameters
 │         │    └── ...pth
 │         └── target_1
 │         └── ...
 │
 ├── models       
-│    └── resnet.py  # 识别模型类
+│    └── resnet.py  # Recognition model class
 │    └── ...
 │
-├── report  # 攻击效果展示图
+├── report  # Folder for attack effect visualization
 │
-├── tensorboard      # tensorboard训练过程保存文件夹
+├── tensorboard      # Folder for tensorboard training process logs
 │
-├── contrast.py          # 攻击效果展示，需要图形化界面
+├── contrast.py          # Visualization of attack effects, requires a graphical interface
 │
-├── test.py              # 测试攻击后准确率
+├── test.py              # Test accuracy after attack
 │
-├── test_num_workers.py  # 测试最佳num_workers数
+├── test_num_workers.py  # Test the optimal number of workers
 │
-├── train.py             # 训练识别模型
+├── train.py             # Train recognition model
 │
-└── train_residual_model.py  # 训练UPSET方法的扰动生成模型
+└── train_residual_model.py  # Train the perturbation generation model for UPSET method
 ```
 
-## 训练识别模型
+## Train Recognition Model
 
 ```shell
-# -e --epoch 为 训练次数, 可选，默认 为 100
+# -e --epoch specifies the number of training epochs, optional, default is 100
 python train.py -e 100
 ```
 
-## 攻击效果展示
+## Visualize Attack Effects
 
 ```shell
-# -m 为 攻击方法
+# -m specifies the attack method
 # L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, C&W, DEEPFOOL, MI-FGSM, UPSET
 python contrast.py -m FGSM
 ```
 
-## 测试攻击后准确率
+## Test Accuracy After Attack
 
 ```shell
-# -m 为 攻击方法
+# -m specifies the attack method
 # L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, C&W, DEEPFOOL, MI-FGSM, UPSET
-# -c 为 测试次数，可选，默认为500
+# -c specifies the number of test runs, optional, default is 500
 python test.py -m FGSM -c 100
 ```
 
-## 训练UPSET方法的扰动生成模型
+## Train Perturbation Generation Model for UPSET Method
 
 ```shell
-# -t  --target        为 扰动生成模型针对的标签
-# 范围 0 ~ 9, 对应 plane, automobile, bird, cat, deer, dog, frog, horse, ship, truck
-# -e  --epoch         为 训练次数, 可选，默认 为 100
-# -lr --learning_rate 为 学习率，  可选，默认 为 1e-3
+# -t --target specifies the target label for the perturbation generation model
+# Range is 0 ~ 9, corresponding to plane, automobile, bird, cat, deer, dog, frog, horse, ship, truck
+# -e --epoch specifies the number of training epochs, optional, default is 100
+# -lr --learning_rate specifies the learning rate, optional, default is 1e-3
 
-# 训练扰动模型需要识别模型，请在文件中自行修改或加载
+# Training the perturbation model requires a recognition model, please modify or load it in the script
 python train_residual_model.py -t 0 -e 100
 ```
 
-## 测试最佳num_workers数
+## Test Optimal Number of Workers
 
 ```shell
-# 运行后根据不同num_workers数对应运行的时间选择最佳的num_workers数
+# Run and select the best number of workers based on execution time
 python test_num_workers.py
 ```
 
-## 贡献者
+## Contributors
 
 - Liang Jianye

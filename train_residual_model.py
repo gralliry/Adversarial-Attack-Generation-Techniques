@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Description: 这是用来训练UPSET方法需要的扰动生成模型
+# @Description: This is used to train the disturbance generation model required by the UPSET method
 import os.path
 
 import torch
@@ -36,23 +36,23 @@ def main():
         transforms.ToTensor(),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
     ])
-    # 准备数据集
+    # datasets
     train_datasets = CIFAR10("./datasets", train=True, transform=transform_train)
 
     test_datasets = CIFAR10("./datasets", train=False, transform=transform_test)
 
-    # 数据加载器
+    # dataloader
     train_dataloader = DataLoader(train_datasets, batch_size=128, shuffle=True, num_workers=4, drop_last=True)
     test_dataloader = DataLoader(test_datasets, batch_size=128, shuffle=False, num_workers=0, drop_last=True)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    # -------------------请在这里加载识别模型-------------------
+    # -------------------Load the identification model here-------------------
     right_model = ResNet18().to(device)
     right_model.load_state_dict(torch.load("./parameter/ResNet/train_100_0.9126999974250793.pth"))
     right_model.eval()
 
-    # -------------------请在这里加载UPSET扰动模型-------------------
+    # -------------------Load the UPSET disturbance model here-------------------
     residual_model = ResidualModel().to(device)
     # residual_model.load_state_dict(torch.load("./parameter/UPSET/target_0/0.9653946161270142.pth"))
 
@@ -60,18 +60,18 @@ def main():
 
     learning_rate = args.learning_rate
     optimizer = torch.optim.SGD(residual_model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
-    # 余弦退火调整学习率
+
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
 
-    # 这里是针对标签值 attack_target为0-9
+    # attack_targets is 0-9
     attack_targets = torch.tensor([attack_target for _ in range(train_dataloader.batch_size)], device=device)
 
-    # 记录正确率
+    # Recording accuracy rate
     attacked_accuracy = 0
     predict_accuracy = 0
     total_num = 0
     for i in range(args.epoch):
-        print(f"第 {i + 1} 轮训练开始")
+        print(f"Epoch {i + 1} start")
         residual_model.train()
         for images, targets in train_dataloader:
             images, targets = images.to(device), targets.to(device)
@@ -81,7 +81,6 @@ def main():
 
             loss = loss_fn(attack_output, attack_targets)
 
-            # 优化器优化模型
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -97,18 +96,16 @@ def main():
                 attacked_accuracy += (attack_output.argmax(1) == attack_targets).sum()
                 total_num += test_dataloader.batch_size
 
-        # 调整学习率
         scheduler.step()
 
-        # 保存模型参数
         if not os.path.exists(f"./parameter/UPSET/target_{attack_target}"):
             os.makedirs(f"./parameter/UPSET/target_{attack_target}")
 
         torch.save(residual_model.state_dict(),
                    f"./parameter/UPSET/target_{attack_target}/{attacked_accuracy / total_num}.pth")
 
-        print(f"预测后识别成功率: {predict_accuracy / total_num}")
-        print(f"攻击后识别错误率: {attacked_accuracy / total_num}")
+        print(f"Identify success rate after prediction: {predict_accuracy / total_num}")
+        print(f"Identification error rate after attack: {attacked_accuracy / total_num}")
 
 
 if __name__ == "__main__":

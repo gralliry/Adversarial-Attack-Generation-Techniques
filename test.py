@@ -25,20 +25,18 @@ def main():
         transforms.ToTensor(),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
     ])
-    # 测试数据集
-    test_datasets = datasets.CIFAR10("./datasets", train=False, transform=transform_test)
-    # 数据加载器
-    test_dataloader = DataLoader(test_datasets, batch_size=1, shuffle=False, num_workers=4, drop_last=True)
-    # 指定设备
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # 交叉熵损失函数
-    criterion = nn.CrossEntropyLoss().to(device)
-    # 识别模型
-    model = ResNet18().to(device)
-    model.load_state_dict(torch.load("./parameter/ResNet/train_100_0.9126999974250793.pth"))
 
-    # parameter = models.vgg19().to(device)
-    # parameter.load_state_dict(torch.load("./parameter/pretrained/checkpoints/vgg19-dcbb9e9d.pth"))
+    test_datasets = datasets.CIFAR10("./datasets", train=False, transform=transform_test)
+
+    test_dataloader = DataLoader(test_datasets, batch_size=1, shuffle=False, num_workers=4, drop_last=True)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    criterion = nn.CrossEntropyLoss().to(device)
+
+    model = ResNet18().to(device)
+    # Here you can load the already trained model parameter file
+    model.load_state_dict(torch.load("./parameter/ResNet/train_100_0.9126999974250793.pth"))
 
     print("预训练模型加载完成")
 
