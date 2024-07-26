@@ -40,6 +40,13 @@
 │
 └── train_residual_model.py  # Train the perturbation generation model for UPSET method
 ```
+## Installation
+
+```shell
+git clone https://github.com/gralliry/Pytorch-Generative-Adversarial-Network.git
+cd Pytorch-Generative-Adversarial-Network
+pip install -r requirements.txt
+```
 
 ## Train Recognition Model
 
@@ -86,4 +93,4 @@ python test_num_workers.py
 
 ## Contributors
 
-- Liang Jianye
+- Liang Jianye - SCAU
