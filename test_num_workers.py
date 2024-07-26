@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2024/1/7 12:39
-# @Author  : Jianye Liang
-# @File    : test_num_workers.py
-# @Description : 通过运行的时间，选择最佳的num_workers数
+# @Description: 通过运行的时间，选择最佳的num_workers数
 from time import time
 import multiprocessing as mp
 import torch

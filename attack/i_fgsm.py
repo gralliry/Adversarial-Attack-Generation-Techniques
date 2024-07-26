@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2024/1/7 18:36
-# @Author  : Jianye Liang
-# @File    : i_fgsm.py
-# @Description :
+# @Description:
 
 import torch
 

@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2024/1/7 18:29
-# @Author  : Jianye Liang
-# @File    : __init__.py
-# @Description :
+# @Description:
 
 from .model import BaseModel
 
 from .fgsm import FGSM
+
 from .i_fgsm import I_FGSM
+
 from .mi_fgsm import MI_FGSM
 
 from .deepfool import DeepFool

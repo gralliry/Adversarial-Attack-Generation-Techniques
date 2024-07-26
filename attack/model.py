@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2024/1/7 19:42
-# @Author  : Jianye Liang
-# @File    : parameter.py
-# @Description :
+# @Description:
 import torch
 import numpy
 

@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2024/1/7 18:48
-# @Author  : Jianye Liang
-# @File    : deepfool.py
-# @Description :
+# @Description:
 import torch
 
 import numpy as np

@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2024/1/7 20:21
-# @Author  : Jianye Liang
-# @File    : jsma.py
-# @Description :
+# @Description:
 import torch
 import numpy as np
 

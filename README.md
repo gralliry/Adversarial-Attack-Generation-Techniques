@@ -83,3 +83,7 @@ python train_residual_model.py -t 0 -e 100
 # 运行后根据不同num_workers数对应运行的时间选择最佳的num_workers数
 python test_num_workers.py
 ```
+
+## 贡献者
+
+- Liang Jianye

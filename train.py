@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2023/11/17 21:12
-# @Author  : Jianye Liang
-# @File    : 20_Train.py
-# @Description :
+# @Description:
 import os
 
 import torch.optim
@@ -53,22 +50,22 @@ def main():
     # https://github.com/kuangliu/pytorch-cifar
 
     # ------------------选择要训练的模型------------------
-    # parameter = SimpleDLA()
-    # parameter = VGG('VGG19')
+    # model = SimpleDLA()
+    # model = VGG('VGG19')
     model = ResNet18()
-    # parameter = PreActResNet18()
-    # parameter = GoogLeNet()
-    # parameter = DenseNet121()
-    # parameter = ResNeXt29_2x64d()
-    # parameter = MobileNet()
-    # parameter = MobileNetV2()
-    # parameter = DPN92()
-    # parameter = ShuffleNetG2()
-    # parameter = SENet18()
-    # parameter = ShuffleNetV2(1)
-    # parameter = EfficientNetB0()
-    # parameter = RegNetX_200MF()
-    # parameter = SimpleDLA()
+    # model = PreActResNet18()
+    # model = GoogLeNet()
+    # model = DenseNet121()
+    # model = ResNeXt29_2x64d()
+    # model = MobileNet()
+    # model = MobileNetV2()
+    # model = DPN92()
+    # model = ShuffleNetG2()
+    # model = SENet18()
+    # model = ShuffleNetV2(1)
+    # model = EfficientNetB0()
+    # model = RegNetX_200MF()
+    # model = SimpleDLA()
 
     model = model.to(device)
 
@@ -103,7 +100,6 @@ def main():
         print(f"第 {i + 1} 轮训练开始")
         model.train()
         for imgs, targets in train_dataloader:
-            # break
             imgs, targets = imgs.to(device), targets.to(device)
             output = model(imgs)
 
@@ -148,12 +144,11 @@ def main():
         writer.add_scalar("test_accuracy", total_accuracy / total_num, total_train_step)
 
         # 保存训练参数文件
-        torch.save(model.state_dict(),
-                   f"./parameter/{model_name}/train_{i + 1}_{total_accuracy / total_num}.pth")
+        torch.save(model.state_dict(), f"./parameter/{model_name}/train_{i + 1}_{total_accuracy / total_num}.pth")
 
         # 调整学习率
         scheduler.step()
-    # tensorboard --logdir=tb/{model_name} --port=6008
+    # tensorboard --logdir=tensorboard/{model_name} --port=6008
     writer.close()
 
 

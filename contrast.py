@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2024/1/9 11:23
-# @Author  : Jianye Liang
-# @File    : contrast.py
-# @Description :
+# @Description:
 import torch
 from torch.utils.data.dataloader import DataLoader
 import torchvision
@@ -67,10 +64,9 @@ def main():
     criterion = torch.nn.CrossEntropyLoss().to(device)
 
     # 识别模型
+    # -------------------请在这里加载识别模型-------------------
     model = ResNet18().to(device)
     model.load_state_dict(torch.load("./parameter/ResNet/train_100_0.9126999974250793.pth"))
-
-
 
     print("预训练模型加载完成")
     # ----------------------------------------------------------
@@ -103,6 +99,7 @@ def main():
         attacker = MI_FGSM(model=model, criterion=criterion)
     elif method == "UPSET":
         # 扰动生成模型
+        # -------------------请在这里加载UPSET扰动模型-------------------（如果不是选用这个攻击方法，可以忽视）
         residual_model = ResidualModel().to(device)
         residual_model.load_state_dict(torch.load("./parameter/UPSET/target_0/0.9653946161270142.pth"))
         # UPSET
@@ -120,12 +117,14 @@ def main():
         image, target = image.to(device), target.to(device)
         output = model(image)
 
-        # 生成攻击标签 # 这里只是单纯错开正确标签，可以换成想要的攻击标签
+        # 生成攻击标签
+        # ----------这里只是单纯错开正确标签，可以换成想要的攻击标签----------
+        # attack_target = [0 for i in target]  # 这个就是对第一个标签0即plane进行攻击
         attack_target = [(i + 1) % 10 for i in target]
 
         print("正在生成攻击样本...")
         # 生成对抗样本
-        # ------------------------------------
+        # ----------可以自行添加参数（如果有）来调整攻击效果----------
         if method == "L-BFGS":
             attack_image = attacker.attack(image, attack_target)
         elif method == "FGSM":

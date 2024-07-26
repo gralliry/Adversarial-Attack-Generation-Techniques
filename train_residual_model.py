@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2024/1/10 13:10
-# @Author  : Jianye Liang
-# @File    : train_residual_model.py
-# @Description : 这是用来训练UPSET方法需要的扰动生成模型
+# @Description: 这是用来训练UPSET方法需要的扰动生成模型
 import os.path
 
 import torch
@@ -55,6 +52,7 @@ def main():
     right_model.load_state_dict(torch.load("./parameter/ResNet/train_100_0.9126999974250793.pth"))
     right_model.eval()
 
+    # -------------------请在这里加载UPSET扰动模型-------------------
     residual_model = ResidualModel().to(device)
     # residual_model.load_state_dict(torch.load("./parameter/UPSET/target_0/0.9653946161270142.pth"))
 
@@ -65,7 +63,7 @@ def main():
     # 余弦退火调整学习率
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
 
-    # 这里针对标签值
+    # 这里是针对标签值 attack_target为0-9
     attack_targets = torch.tensor([attack_target for _ in range(train_dataloader.batch_size)], device=device)
 
     # 记录正确率
@@ -102,6 +100,7 @@ def main():
         # 调整学习率
         scheduler.step()
 
+        # 保存模型参数
         if not os.path.exists(f"./parameter/UPSET/target_{attack_target}"):
             os.makedirs(f"./parameter/UPSET/target_{attack_target}")
 

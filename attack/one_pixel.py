@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2024/1/8 15:54
-# @Author  : Jianye Liang
-# @File    : one_pixel.py
-# @Description :
+# @Description:
 import torch
 import numpy as np
 from torch.functional import F

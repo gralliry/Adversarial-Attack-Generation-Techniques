@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2024/1/7 18:41
-# @Author  : Jianye Liang
-# @File    : mi_fgsm.py
-# @Description :
+# @Description:
 import torch
 
 from .model import BaseModel

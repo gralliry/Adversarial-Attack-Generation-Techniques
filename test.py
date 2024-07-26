@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2024/1/6 19:00
-# @Author  : Jianye Liang
-# @File    : test.py
-# @Description :
+# @Description:
 import torch
 from torch import nn
 from torch.utils.data.dataloader import DataLoader

@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2024/1/5 15:26
-# @Author  : Liang Jinaye
-# @File    : download.py
-# @Description :
+# @Description:
 from torchvision import datasets
 
 DOWNLOAD = True
