@@ -16,8 +16,8 @@
 │    │    └── ...pth
 │    └── ...
 │    │ 
-│    └── UPSET          # Folder for perturbation generation model parameters used by UPSET
-│         └── target_0  # Target folders corresponding to perturbation generation model parameters
+│    └── UPSET             # Folder for perturbation generation model parameters used by UPSET
+│         └── target_0     # Target folders corresponding to perturbation generation model parameters
 │         │    └── ...pth
 │         └── target_1
 │         └── ...
@@ -26,17 +26,17 @@
 │    └── resnet.py  # Recognition model class
 │    └── ...
 │
-├── report  # Folder for attack effect visualization
+├── report                   # Folder for attack effect visualization
+│ 
+├── tensorboard              # Folder for tensorboard training process logs
 │
-├── tensorboard      # Folder for tensorboard training process logs
+├── contrast.py              # Visualization of attack effects, requires a graphical interface
 │
-├── contrast.py          # Visualization of attack effects, requires a graphical interface
+├── test.py                  # Test accuracy after attack
 │
-├── test.py              # Test accuracy after attack
+├── test_num_workers.py      # Test the optimal number of workers
 │
-├── test_num_workers.py  # Test the optimal number of workers
-│
-├── train.py             # Train recognition model
+├── train.py                 # Train recognition model
 │
 └── train_residual_model.py  # Train the perturbation generation model for UPSET method
 ```
