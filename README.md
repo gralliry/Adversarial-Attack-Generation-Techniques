@@ -43,8 +43,8 @@
 ## Installation
 
 ```shell
-git clone https://github.com/gralliry/Pytorch-Generative-Adversarial-Network.git
-cd Pytorch-Generative-Adversarial-Network
+git clone https://github.com/gralliry/Adversarial-Attack-Generation-Techniques.git
+cd Adversarial-Attack-Generation-Techniques
 pip install -r requirements.txt
 ```
 
