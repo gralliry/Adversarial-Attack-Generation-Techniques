@@ -57,7 +57,7 @@ class MI_FGSM(BaseModel):
                 loss = self.criterion(output, target)
                 loss.backward()
                 # 生成对抗扰动 # 使用动量来更新扰动 # 梯度归一化
-                grad = pert_image.grad.sign()
+                grad = pert_image.grad
                 grad = self.decay_factor * grad + grad / torch.norm(grad, p=1)
                 pert_image = pert_image + alpha * torch.sign(grad)
                 # 确保扰动后的图像仍然是有效的输入（在 [0, 1] 范围内）
