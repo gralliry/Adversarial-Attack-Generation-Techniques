@@ -3,7 +3,7 @@
 import torch
 from torch import nn
 
-from .basemodel import BaseModel
+from .base_model import BaseModel
 
 
 class ResidualModel(nn.Module):

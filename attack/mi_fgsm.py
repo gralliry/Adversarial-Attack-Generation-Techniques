@@ -2,7 +2,7 @@
 # @Description:
 import torch
 
-from .basemodel import BaseModel
+from .base_model import BaseModel
 
 
 class MI_FGSM(BaseModel):
@@ -38,7 +38,6 @@ class MI_FGSM(BaseModel):
         # 生成欺骗标签
         # 比如这里生成目标索引为0，即plane的标签索引
         # attack_target = [(i + 1) % 10 for i in target]
-        target = self.totensor(target)
 
         alpha = self.epsilon / self.iters
         self.model.eval()

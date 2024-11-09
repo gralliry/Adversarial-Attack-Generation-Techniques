@@ -3,7 +3,7 @@
 import torch
 import numpy as np
 from torch.functional import F
-from .basemodel import BaseModel
+from .base_model import BaseModel
 
 
 class ONE_PIXEL(BaseModel):
@@ -36,8 +36,8 @@ class ONE_PIXEL(BaseModel):
         self.pixels_changed = pixels_changed
 
     def perturb(self, image, pos, rgb):
-        pert_image = self.totensor(image)
-        # 根据个体生成新的对抗样本
+        pert_image = image.clone().detach().requires_grad_(True)
+        # 根据个体生成 新的 对抗样本
         for i in range(3):
             pert_image[0, i, pos[0], pos[1]] = rgb[i]
 
@@ -55,7 +55,7 @@ class ONE_PIXEL(BaseModel):
                 pixel_fitness = []
                 # 遍历每个种群的个体
                 for rgb in rgb_candidates[index]:
-                    # 生成新的对抗样本
+                    # 生成 新的 对抗样本
                     pert_image = self.perturb(img, pos, rgb)
                     # 获取新图像的输出
                     output = self.model(pert_image).squeeze()
@@ -100,7 +100,7 @@ class ONE_PIXEL(BaseModel):
         assert image.size(0) == 1, ValueError("只接受 batch_size = 1 的数据")
         # 生成欺骗标签
         # 这里只是单纯生成错误的标签，并没有指定标签，所以攻击后识别成功率还是会偏高
-        # fool_target = [(i + 1) % 10 for i in target]
+        # (target + 1) % 10
         image = image.clone().detach().requires_grad_(True)
         # 使用均匀分布 X~U(0,31) Y~U(0,31) 来生成 X, Y
         coordinates = np.mgrid[0:image.size(2), 0:image.size(3)].reshape(2, -1).T

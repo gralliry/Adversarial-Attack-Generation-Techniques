@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Description: This is used to train the disturbance generation model required by the UPSET method
 import os.path
+import warnings
 
 import torch
 from torch import nn
@@ -9,9 +10,9 @@ from torchvision import transforms
 from torchvision.datasets import CIFAR10
 import argparse
 
-from models import ResNet18
+import attack
 
-from attack import ResidualModel
+from models import IndentifyModel
 
 parser = argparse.ArgumentParser()
 
@@ -48,13 +49,14 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # -------------------Load the identification model here-------------------
-    right_model = ResNet18().to(device)
-    right_model.load_state_dict(torch.load("./parameter/ResNet/train_100_0.9126999974250793.pth"))
+    right_model = IndentifyModel().to(device)
+    warnings.warn(f"You Must Load The Parameter of Model: {right_model.__class__.__name__}")
+    # right_model.load_state_dict(torch.load("./parameter/ResNet/30.pth"))
     right_model.eval()
 
     # -------------------Load the UPSET disturbance model here-------------------
-    residual_model = ResidualModel().to(device)
-    # residual_model.load_state_dict(torch.load("./parameter/UPSET/target_0/0.9653946161270142.pth"))
+    residual_model = attack.ResidualModel().to(device)
+    # residual_model.load_state_dict(torch.load("./parameter/UPSET/target_0/1.pth"))
 
     loss_fn = nn.CrossEntropyLoss().to(device)
 
@@ -70,6 +72,8 @@ def main():
     attacked_accuracy = 0
     predict_accuracy = 0
     total_num = 0
+    pardir = f"./parameter/UPSET/target_{attack_target}"
+    os.makedirs(pardir, exist_ok=True)
     for i in range(args.epoch):
         print(f"Epoch {i + 1} start")
         residual_model.train()
@@ -86,23 +90,18 @@ def main():
             optimizer.step()
 
         residual_model.eval()
-        with torch.no_grad():
-            for images, targets in test_dataloader:
-                images, targets = images.to(device), targets.to(device)
-                attack_images = residual_model(images) + images
-                attack_output = right_model(attack_images)
+        for images, targets in test_dataloader:
+            images, targets = images.to(device), targets.to(device)
+            attack_images = residual_model(images) + images
+            attack_output = right_model(attack_images)
 
-                predict_accuracy += (attack_output.argmax(1) == targets).sum()
-                attacked_accuracy += (attack_output.argmax(1) == attack_targets).sum()
-                total_num += test_dataloader.batch_size
+            predict_accuracy += (attack_output.argmax(1) == targets).sum()
+            attacked_accuracy += (attack_output.argmax(1) == attack_targets).sum()
+            total_num += test_dataloader.batch_size
 
         scheduler.step()
 
-        if not os.path.exists(f"./parameter/UPSET/target_{attack_target}"):
-            os.makedirs(f"./parameter/UPSET/target_{attack_target}")
-
-        torch.save(residual_model.state_dict(),
-                   f"./parameter/UPSET/target_{attack_target}/{attacked_accuracy / total_num}.pth")
+        torch.save(residual_model.state_dict(), f"{pardir}/{attacked_accuracy / total_num:.7f}.pth")
 
         print(f"Identify success rate after prediction: {predict_accuracy / total_num}")
         print(f"Identification error rate after attack: {attacked_accuracy / total_num}")

@@ -2,7 +2,7 @@
 # @Description:
 import torch
 
-from .basemodel import BaseModel
+from .base_model import BaseModel
 
 
 class CW(BaseModel):
@@ -30,11 +30,10 @@ class CW(BaseModel):
 
     def attack(self, image, target):
         assert image.size(0) == 1, ValueError("只接受 batch_size = 1 的数据")
-        self.model.eval()
 
         image = image.clone().detach().requires_grad_(True)
         pert_image = image.clone().detach().requires_grad_(True)
-        attack_target = self.totensor([(i + 1) % 10 for i in target])
+        attack_target = (target + 1) % 10
 
         output = self.model(pert_image)
         self.model.zero_grad()

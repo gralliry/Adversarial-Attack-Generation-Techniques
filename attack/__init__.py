@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Description:
 
-from .basemodel import BaseModel
+from .base_model import BaseModel
 
 from .fgsm import FGSM
 

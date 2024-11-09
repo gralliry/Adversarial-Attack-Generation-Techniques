@@ -3,7 +3,7 @@
 
 import torch
 
-from .basemodel import BaseModel
+from .base_model import BaseModel
 
 
 class FGSM(BaseModel):
@@ -32,7 +32,6 @@ class FGSM(BaseModel):
         """
         # 设置输入张量的 requires_grad 为 True 计算梯度
         pert_image = image.clone().detach().requires_grad_(True)
-        target = self.totensor(target)
         # 设置评估模式，但正常计算梯度
         self.model.eval()
         with torch.set_grad_enabled(True):

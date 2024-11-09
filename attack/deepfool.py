@@ -4,7 +4,7 @@ import torch
 
 import numpy as np
 
-from .basemodel import BaseModel
+from .base_model import BaseModel
 
 
 class DeepFool(BaseModel):
@@ -25,9 +25,6 @@ class DeepFool(BaseModel):
 
         self.overshoot = overshoot
         self.iters = iters
-
-    def gen_target(self, target):
-        return target
 
     def attack(self, image, target):
         """

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Description:
 import argparse
+import warnings
+
 from tqdm import tqdm
 
 import torch
@@ -10,7 +12,7 @@ from torchvision import transforms, datasets
 
 from attack import *
 
-from models import ResNet18
+from models import IndentifyModel
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-m', '--method', required=True,
@@ -36,9 +38,11 @@ def main():
 
     criterion = nn.CrossEntropyLoss().to(device)
 
-    model = ResNet18().to(device)
+    model = IndentifyModel().to(device)
+    # -------------------------------------------
     # Here you can load the already trained model parameter file
-    model.load_state_dict(torch.load("./parameter/ResNet/train_100_0.9126999974250793.pth"))
+    warnings.warn(f"You Must Load The Parameter of Model: {model.__class__.__name__}")
+    # model.load_state_dict(torch.load("./parameter/ResNet/train_100_0.9126999974250793.pth"))
 
     print("预训练模型加载完成")
 
@@ -79,7 +83,8 @@ def main():
     elif method == "UPSET":
         # UPSET
         residual_model = ResidualModel().to(device)
-        residual_model.load_state_dict(torch.load("./parameter/UPSET/target_0/0.9653946161270142.pth"))
+        warnings.warn(f"You Must Load The Parameter of Model: {residual_model.__class__.__name__}")
+        # residual_model.load_state_dict(torch.load("./parameter/UPSET/target_0/1.pth"))
         attacker = UPSET(model=residual_model)
     else:
         print(f"Unknown Method: {method}")

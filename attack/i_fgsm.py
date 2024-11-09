@@ -3,7 +3,7 @@
 
 import torch
 
-from .basemodel import BaseModel
+from .base_model import BaseModel
 
 
 class I_FGSM(BaseModel):
@@ -32,7 +32,6 @@ class I_FGSM(BaseModel):
         :return: 生成的对抗样本
         """
         pert_image = image.clone().detach().requires_grad_(True)
-        target = self.totensor(target)
         # 迭代步长
         alpha = self.epsilon / self.iters
 

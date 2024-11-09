@@ -12,11 +12,11 @@ from torchvision.datasets import CIFAR10
 
 import argparse
 
-import models
+from models import IndentifyModel
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("-e", "--epoch", default=100, type=int, help="Training times")
+parser.add_argument("-e", "--epoch", default=30, type=int, help="Training times")
 
 args = parser.parse_args()
 
@@ -52,23 +52,7 @@ def main():
     # network model
     # https://github.com/kuangliu/pytorch-cifar
 
-    # ------------------Select the model to train------------------
-    # model = models.SimpleDLA()
-    # model = models.VGG('VGG19')
-    model = models.ResNet18()
-    # model = models.PreActResNet18()
-    # model = models.GoogLeNet()
-    # model = models.DenseNet121()
-    # model = models.ResNeXt29_2x64d()
-    # model = models.MobileNet()
-    # model = models.MobileNetV2()
-    # model = models.DPN92()
-    # model = models.ShuffleNetG2()
-    # model = models.SENet18()
-    # model = models.ShuffleNetV2(1)
-    # model = models.EfficientNetB0()
-    # model = models.RegNetX_200MF()
-    # model = models.SimpleDLA()
+    model = IndentifyModel()
 
     model = model.to(device)
 
@@ -89,10 +73,8 @@ def main():
     # use Cosine Annealing to adjust learning rate
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
 
-    if not os.path.exists(f"./tensorboard/{model_name}"):
-        os.mkdir(f"./tensorboard/{model_name}")
-    if not os.path.exists(f"./parameter/{model_name}"):
-        os.mkdir(f"./parameter/{model_name}")
+    os.makedirs(f"./tensorboard/{model_name}", exist_ok=True)
+    os.makedirs(f"./parameter/{model_name}", exist_ok=True)
     # Training process recorder
     writer = SummaryWriter(f"./tensorboard/{model_name}")
     # The number of training rounds

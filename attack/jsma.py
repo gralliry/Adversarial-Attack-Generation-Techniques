@@ -3,7 +3,7 @@
 import torch
 import numpy as np
 
-from .basemodel import BaseModel
+from .base_model import BaseModel
 
 
 class JSMA(BaseModel):
@@ -43,7 +43,7 @@ class JSMA(BaseModel):
         # 生成欺骗标签
         # 这里的fool_target元素数量要和batch_size相同
         # 这里只是单纯生成错误的标签，并没有指定标签
-        attack_target = self.totensor([(i + 1) % 10 for i in target])
+        attack_target = (target + 1) % 10
         # 定义搜索域，修改后的位置置零，下一次不再计算
         mask = np.ones(pert_image.shape)
         # 评估模式

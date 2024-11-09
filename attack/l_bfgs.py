@@ -3,7 +3,7 @@
 import torch
 import torch.optim as optim
 
-from .basemodel import BaseModel
+from .base_model import BaseModel
 
 
 class L_BFGS(BaseModel):
@@ -34,7 +34,7 @@ class L_BFGS(BaseModel):
         """
         pert_image = image.clone().detach().to(self.device)
         # 生成错误标签，这里可替换成需要攻击的标签
-        attack_target = self.totensor([(i + 1) % 10 for i in target])
+        attack_target = (target + 1) % 10
 
         self.model.eval()
 
