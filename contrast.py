@@ -9,7 +9,7 @@ import warnings
 import argparse
 
 # 识别模型
-from models import ResNet18
+from models import IndentifyModel
 # 对抗模型
 from attack import FGSM, I_FGSM, MI_FGSM, L_BFGS, DeepFool, CW, JSMA, ONE_PIXEL, UPSET, ResidualModel
 
@@ -60,7 +60,7 @@ def main():
     criterion = torch.nn.CrossEntropyLoss().to(device)
 
     # Here you can load the already trained model parameter file
-    model = ResNet18().to(device)
+    model = IndentifyModel().to(device)
     model.load_state_dict(torch.load("./parameter/ResNet/train_100_0.9126999974250793.pth"))
 
     print("The pre-training model is loaded")
@@ -106,42 +106,13 @@ def main():
     # ----------------------------------------------------------
 
     print("The attack model has been created")
-
-    model.eval()
     # 开始测试
     for image, target in dataloader:
         image, target = image.to(device), target.to(device)
-        output = model(image)
 
-        # Generate attack tag
-        # Here you simply stagger the correct labels and replace them with the attack labels you want
-        attack_target = [(i + 1) % 10 for i in target]
-        # attack_target = [0 for i in target]  # This is an attack on the first tag 0, plane
-
+        origin_output = attacker.forward(image)
         print("Generating attack samples...")
-        # Generate adversarial sample
-        # You can add your own parameters (if any) to adjust the attack effect
-        if method == "L-BFGS":
-            attack_image = attacker.attack(image, attack_target)
-        elif method == "FGSM":
-            attack_image = attacker.attack(image, target)
-        elif method == "I-FGSM":
-            attack_image = attacker.attack(image, target)
-        elif method == "JSMA":
-            attack_image = attacker.attack(image, attack_target)
-        elif method == "ONE-PIXEL":
-            attack_image = attacker.attack(image, target, is_targeted=False)
-        elif method == "C&W":
-            attack_image = attacker.attack(image, attack_target)
-        elif method == "DEEPFOOL":
-            attack_image = attacker.attack(image)
-        elif method == "MI-FGSM":
-            attack_image = attacker.attack(image, target)
-        elif method == "UPSET":
-            attack_image = attacker.attack(image)
-        else:
-            raise f"Unknown Method: {method}"
-        # ------------------------------------
+        attack_image = attacker.attack(image, target)
 
         attack_output = model(attack_image)
         print("Generation complete.")
@@ -149,7 +120,7 @@ def main():
         show(
             [image, attack_image],
             [
-                f"True: {classes[target[0]]}  Predict: {classes[output.argmax(1)[0]]}",
+                f"True: {classes[target[0]]}  Predict: {classes[origin_output.argmax(1)[0]]}",
                 f"Attacked: {classes[attack_output.argmax(1)[0]]}",
             ]
         )

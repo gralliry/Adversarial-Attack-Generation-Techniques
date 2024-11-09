@@ -45,6 +45,10 @@ class UPSET(BaseModel):
         self.iters = iters
 
     def attack(self, image, target):
+        """
+        :param image: 需要处理的张量
+        :param target: the target is useless, leave it alone
+        """
         pert_image = image.clone().detach().requires_grad_(True)
 
         for _ in range(self.iters):

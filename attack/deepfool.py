@@ -31,7 +31,7 @@ class DeepFool(BaseModel):
         # DeepFool
         只接受 batch_size = 1 的数据
         :param image: 需要处理的张量
-        :param target: 这里的标签没有用的
+        :param target: the target is useless, leave it alone
         :return: 生成的对抗样本
         """
         assert image.size(0) == 1, ValueError("只接受 batch_size = 1 的数据")
