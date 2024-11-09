@@ -140,8 +140,7 @@ def main():
         elif method == "UPSET":
             attack_image = attacker.attack(image)
         else:
-            print(f"Unknown Method: {method}")
-            return
+            raise f"Unknown Method: {method}"
         # ------------------------------------
 
         attack_output = model(attack_image)

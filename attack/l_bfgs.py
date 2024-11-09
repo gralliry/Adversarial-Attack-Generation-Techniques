@@ -3,7 +3,7 @@
 import torch
 import torch.optim as optim
 
-from .model import BaseModel
+from .basemodel import BaseModel
 
 
 class L_BFGS(BaseModel):

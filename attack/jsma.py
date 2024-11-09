@@ -3,7 +3,7 @@
 import torch
 import numpy as np
 
-from .model import BaseModel
+from .basemodel import BaseModel
 
 
 class JSMA(BaseModel):

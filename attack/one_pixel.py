@@ -3,7 +3,7 @@
 import torch
 import numpy as np
 from torch.functional import F
-from .model import BaseModel
+from .basemodel import BaseModel
 
 
 class ONE_PIXEL(BaseModel):

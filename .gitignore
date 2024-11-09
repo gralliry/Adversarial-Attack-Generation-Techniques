@@ -8,5 +8,7 @@ parameter/**/*.pth
 datasets/
 !datasets/download.py
 
+tensorboard/*
+!tensorboard/.gitkeep
+
 venv/
-tensorboard/

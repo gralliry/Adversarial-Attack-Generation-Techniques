@@ -84,7 +84,7 @@ def main():
         print(f"Unknown Method: {method}")
         return
     # -------------------------------------------
-    # 开始测试
+    # begin to test
     attacker.test_attack(model=model, dataloader=test_dataloader, max_counter=args.count)
 
 

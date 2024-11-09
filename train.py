@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Description:
 import os
+from tqdm import tqdm
 
 import torch.optim
 from torch.utils.tensorboard import SummaryWriter
@@ -8,9 +9,10 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data.dataloader import DataLoader
 from torchvision import transforms
 from torchvision.datasets import CIFAR10
+
 import argparse
 
-from models import *
+import models
 
 parser = argparse.ArgumentParser()
 
@@ -42,35 +44,36 @@ def main():
 
     # device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("Using device:", device)
 
     # loss function
-    loss_fn = nn.CrossEntropyLoss().to(device)
+    loss_fn = torch.nn.CrossEntropyLoss().to(device)
 
     # network model
     # https://github.com/kuangliu/pytorch-cifar
 
     # ------------------Select the model to train------------------
-    # model = SimpleDLA()
-    # model = VGG('VGG19')
-    model = ResNet18()
-    # model = PreActResNet18()
-    # model = GoogLeNet()
-    # model = DenseNet121()
-    # model = ResNeXt29_2x64d()
-    # model = MobileNet()
-    # model = MobileNetV2()
-    # model = DPN92()
-    # model = ShuffleNetG2()
-    # model = SENet18()
-    # model = ShuffleNetV2(1)
-    # model = EfficientNetB0()
-    # model = RegNetX_200MF()
-    # model = SimpleDLA()
+    # model = models.SimpleDLA()
+    # model = models.VGG('VGG19')
+    model = models.ResNet18()
+    # model = models.PreActResNet18()
+    # model = models.GoogLeNet()
+    # model = models.DenseNet121()
+    # model = models.ResNeXt29_2x64d()
+    # model = models.MobileNet()
+    # model = models.MobileNetV2()
+    # model = models.DPN92()
+    # model = models.ShuffleNetG2()
+    # model = models.SENet18()
+    # model = models.ShuffleNetV2(1)
+    # model = models.EfficientNetB0()
+    # model = models.RegNetX_200MF()
+    # model = models.SimpleDLA()
 
     model = model.to(device)
 
     # Here you can load the already trained model parameter file to continue training
-    model.load_state_dict(torch.load("./parameter/ResNet/train_100_0.9126999974250793.pth", map_location=device))
+    # model.load_state_dict(torch.load("./parameter/ResNet/train_100_0.9126999974250793.pth", map_location=device))
 
     model_name = model.__class__.__name__
 
@@ -86,10 +89,6 @@ def main():
     # use Cosine Annealing to adjust learning rate
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
 
-    # Record training steps
-    total_train_step = 0
-    total_train_loss = 0
-
     if not os.path.exists(f"./tensorboard/{model_name}"):
         os.mkdir(f"./tensorboard/{model_name}")
     if not os.path.exists(f"./parameter/{model_name}"):
@@ -97,10 +96,11 @@ def main():
     # Training process recorder
     writer = SummaryWriter(f"./tensorboard/{model_name}")
     # The number of training rounds
-    for i in range(args.epoch):
-        print(f"Epoch {i + 1} start")
+    for epoch in range(1, args.epoch + 1):
         model.train()
-        for imgs, targets in train_dataloader:
+        train_num = 0
+        train_loss = 0
+        for imgs, targets in tqdm(train_dataloader, desc=f"Train:{epoch}/{args.epoch}"):
             imgs, targets = imgs.to(device), targets.to(device)
             output = model(imgs)
 
@@ -110,41 +110,36 @@ def main():
             loss.backward()
             optimizer.step()
 
-            total_train_step += 1
-            total_train_loss += loss.item()
+            train_num += train_dataloader.batch_size
+            train_loss += loss.item()
 
-            if total_train_step % 100 == 0:
-                print(f"Train Epoch: {total_train_step}, Loss: {total_train_loss / total_train_step}")
-                writer.add_scalar("train_loss", total_train_loss / total_train_step, total_train_step)
+        print(f"Train Epoch: {epoch}, Loss: {train_loss / train_num}")
+        writer.add_scalar("train_loss", train_loss / train_num, epoch)
 
         # test
         model.eval()
-        total_test_loss = 0
+        test_num = 0
+        test_loss = 0
+        test_accuracy = 0
+        for imgs, targets in tqdm(test_dataloader, desc=f"Eval:{epoch}/{args.epoch}"):
+            imgs, targets = imgs.to(device), targets.to(device)
 
-        total_num = 0
-        total_accuracy = 0
-        with torch.no_grad():
-            for imgs, targets in test_dataloader:
-                imgs, targets = imgs.to(device), targets.to(device)
+            output = model(imgs)
 
-                output = model(imgs)
+            loss = loss_fn(output, targets)
 
-                loss = loss_fn(output, targets)
-
-                total_test_loss += loss.item()
-                accuracy = (output.argmax(1) == targets).sum()
-
-                total_num += test_dataloader.batch_size
-                total_accuracy += accuracy
+            test_num += test_dataloader.batch_size
+            test_loss += loss.item()
+            test_accuracy += (output.argmax(1) == targets).sum()
 
         # Record the accuracy and loss of the total train step
-        print(f"test loss: {total_test_loss / total_num}")
-        writer.add_scalar("test_loss", total_test_loss / total_num, total_train_step)
-        print(f"test accuracy: {total_accuracy / total_num}")
-        writer.add_scalar("test_accuracy", total_accuracy / total_num, total_train_step)
+        print(f"test loss: {test_loss / test_num}")
+        writer.add_scalar("test_loss", test_loss / test_num, epoch)
+        print(f"test accuracy: {test_accuracy / test_num}")
+        writer.add_scalar("test_accuracy", test_accuracy / test_num, epoch)
 
         # Save the training parameter file
-        torch.save(model.state_dict(), f"./parameter/{model_name}/train_{i + 1}_{total_accuracy / total_num}.pth")
+        torch.save(model.state_dict(), f"./parameter/{model_name}/{epoch}.pth")
 
         # Adjust learning rate
         scheduler.step()

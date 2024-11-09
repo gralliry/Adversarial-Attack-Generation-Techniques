@@ -2,7 +2,7 @@
 # @Description:
 import torch
 
-from .model import BaseModel
+from .basemodel import BaseModel
 
 
 class CW(BaseModel):
