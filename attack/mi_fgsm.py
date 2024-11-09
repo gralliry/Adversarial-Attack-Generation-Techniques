@@ -27,13 +27,6 @@ class MI_FGSM(BaseModel):
         self.decay_factor = decay_factor
         self.iters = iters
 
-    def test_attack_args(self, image, target, **kwargs):
-        # 生成欺骗标签
-        # 比如这里生成目标索引为0，即plane的标签索引
-        # attack_target = [(i + 1) % 10 for i in target]
-        # return image, attack_target
-        return image, target
-
     def attack(self, image, target):
         """
         MI-FGSM
@@ -42,6 +35,9 @@ class MI_FGSM(BaseModel):
         :return: 生成的对抗样本
         """
         pert_image = image.clone().detach().requires_grad_(True)
+        # 生成欺骗标签
+        # 比如这里生成目标索引为0，即plane的标签索引
+        # attack_target = [(i + 1) % 10 for i in target]
         target = self.totensor(target)
 
         alpha = self.epsilon / self.iters

@@ -35,12 +35,6 @@ class ONE_PIXEL(BaseModel):
         self.factor = factor
         self.pixels_changed = pixels_changed
 
-    def test_attack_args(self, image, target, **kwargs):
-        # 生成欺骗标签
-        # 这里只是单纯生成错误的标签，并没有指定标签，所以攻击后识别成功率还是会偏高
-        # fool_target = [(i + 1) % 10 for i in target]
-        return image, target, False
-
     def perturb(self, image, pos, rgb):
         pert_image = self.totensor(image)
         # 根据个体生成新的对抗样本
@@ -104,6 +98,9 @@ class ONE_PIXEL(BaseModel):
 
     def attack(self, image, target, is_targeted=False):
         assert image.size(0) == 1, ValueError("只接受 batch_size = 1 的数据")
+        # 生成欺骗标签
+        # 这里只是单纯生成错误的标签，并没有指定标签，所以攻击后识别成功率还是会偏高
+        # fool_target = [(i + 1) % 10 for i in target]
         image = image.clone().detach().requires_grad_(True)
         # 使用均匀分布 X~U(0,31) Y~U(0,31) 来生成 X, Y
         coordinates = np.mgrid[0:image.size(2), 0:image.size(3)].reshape(2, -1).T

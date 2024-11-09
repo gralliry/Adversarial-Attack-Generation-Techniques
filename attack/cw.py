@@ -23,23 +23,18 @@ class CW(BaseModel):
         :param cuda: 是否启动cuda
         """
         super().__init__(model=model, cuda=cuda)
-
         self.criterion = criterion
         self.a = a
         self.cr = cr
         self.iters = iters
 
-    def test_attack_args(self, image, target, **kwargs):
-        attack_target = [(i + 1) % 10 for i in target]
-        return image, attack_target
-
-    def attack(self, image, attack_target):
+    def attack(self, image, target):
         assert image.size(0) == 1, ValueError("只接受 batch_size = 1 的数据")
         self.model.eval()
 
         image = image.clone().detach().requires_grad_(True)
         pert_image = image.clone().detach().requires_grad_(True)
-        attack_target = self.totensor(attack_target)
+        attack_target = self.totensor([(i + 1) % 10 for i in target])
 
         output = self.model(pert_image)
         self.model.zero_grad()

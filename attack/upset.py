@@ -12,6 +12,7 @@ class ResidualModel(nn.Module):
 
     针对某个标签，输出图像，生成扰动，干净样本 + 扰动 = 攻击样本
     """
+
     def __init__(self):
         super(self.__class__, self).__init__()
         self.model = nn.Sequential(
@@ -43,10 +44,7 @@ class UPSET(BaseModel):
         self.alpha = alpha
         self.iters = iters
 
-    def test_attack_args(self, image, target, **kwargs):
-        return (image,)
-
-    def attack(self, image):
+    def attack(self, image, target):
         pert_image = image.clone().detach().requires_grad_(True)
 
         for _ in range(self.iters):

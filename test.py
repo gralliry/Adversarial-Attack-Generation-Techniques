@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 # @Description:
+import argparse
+from tqdm import tqdm
+
 import torch
 from torch import nn
 from torch.utils.data.dataloader import DataLoader
 from torchvision import transforms, datasets
-import argparse
 
 from attack import *
 
@@ -28,7 +30,7 @@ def main():
 
     test_datasets = datasets.CIFAR10("./datasets", train=False, transform=transform_test)
 
-    test_dataloader = DataLoader(test_datasets, batch_size=1, shuffle=False, num_workers=4, drop_last=True)
+    dataloader = DataLoader(test_datasets, batch_size=1, shuffle=False, num_workers=4, drop_last=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -79,13 +81,48 @@ def main():
         residual_model = ResidualModel().to(device)
         residual_model.load_state_dict(torch.load("./parameter/UPSET/target_0/0.9653946161270142.pth"))
         attacker = UPSET(model=residual_model)
-        # attacker = UPSET(parameter=residual_model)
     else:
         print(f"Unknown Method: {method}")
         return
     # -------------------------------------------
     # begin to test
-    attacker.test_attack(model=model, dataloader=test_dataloader, max_counter=args.count)
+    """
+    测试模型正确率
+    :param model: 识别模型
+    :param dataloader: 数据加载器
+    :param max_counter: 最大测试次数
+    :return:
+    """
+    # 计数器
+    counter = 0
+    max_counter = min(args.count, len(dataloader))
+    print(f"Total Test Num: {max_counter}")
+    batch_size = dataloader.batch_size
+    # 整体正确率
+    total_num = 0
+    total_accuracy = 0
+    model.eval()
+
+    tqdm_dataloader = tqdm(dataloader, desc="Test:")
+    for image, target in tqdm_dataloader:
+        image, target = image.to(device), target.to(device)
+
+        # 生成攻击图像
+        pert_image = attacker.attack(image, target)
+        # 正确模型图像
+        output = attacker.forward(pert_image)
+
+        counter += 1
+        total_num += batch_size
+        accuracy = (output.argmax(1) == target).sum()
+        total_accuracy += accuracy
+
+        tqdm_dataloader.set_postfix(No=counter, Acc=f"{accuracy / batch_size}")
+
+        if counter >= max_counter:
+            break
+
+    print(f"{attacker.__class__.__name__}正确率: {total_accuracy / (max_counter * batch_size)}")
 
 
 if __name__ == "__main__":

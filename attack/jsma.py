@@ -30,37 +30,7 @@ class JSMA(BaseModel):
         self.gamma = gamma
         self.iters = iters
 
-    def test_attack_args(self, image, target, **kwargs):
-        # 生成欺骗标签
-        # 这里的fool_target元素数量要和batch_size相同
-        # 这里只是单纯生成错误的标签，并没有指定标签
-        fool_target = [(i + 1) % 10 for i in target]
-        return image, fool_target
-
-    # 计算显著图
-    @staticmethod
-    def saliency_map(image, mask):
-        """
-        此方法为beta参数的简化版本，注重攻击目标贡献大的点
-        :param image: 输入的图像
-        :param mask: 标记位，记录已经访问的点的坐标
-        :return:
-        """
-        derivative = image.grad.data.cpu().numpy().copy()
-        # 预测 对攻击目标的贡献 # 对于搜索过的点设置为0
-        alphas = derivative * mask
-        # 预测对非攻击目标的贡献
-        betas = -np.ones_like(alphas)
-        # 计算正向扰动和负向扰动的差距
-        sal_map = np.abs(alphas) * np.abs(betas) * np.sign(alphas * betas)
-        # 最佳像素和扰动方向 # 有目标攻击选择
-        index = np.argmax(sal_map)
-        # 转换成(p1,p2)格式
-        index = np.unravel_index(index, mask.shape)
-        pixel_sign = np.sign(alphas)[index]
-        return index, pixel_sign
-
-    def attack(self, image, attack_target):
+    def attack(self, image, target):
         """
         JSMA
         :param image: 图像
@@ -70,7 +40,10 @@ class JSMA(BaseModel):
         assert image.size(0) == 1, ValueError("只接受 batch_size = 1 的数据")
 
         pert_image = image.clone().detach().requires_grad_(True)
-        attack_target = self.totensor(attack_target)
+        # 生成欺骗标签
+        # 这里的fool_target元素数量要和batch_size相同
+        # 这里只是单纯生成错误的标签，并没有指定标签
+        attack_target = self.totensor([(i + 1) % 10 for i in target])
         # 定义搜索域，修改后的位置置零，下一次不再计算
         mask = np.ones(pert_image.shape)
         # 评估模式
@@ -99,3 +72,26 @@ class JSMA(BaseModel):
                     mask[index] = 0
 
         return pert_image
+
+    # 计算显著图
+    @staticmethod
+    def saliency_map(image, mask):
+        """
+        此方法为beta参数的简化版本，注重攻击目标贡献大的点
+        :param image: 输入的图像
+        :param mask: 标记位，记录已经访问的点的坐标
+        :return:
+        """
+        derivative = image.grad.data.cpu().numpy().copy()
+        # 预测 对攻击目标的贡献 # 对于搜索过的点设置为0
+        alphas = derivative * mask
+        # 预测对非攻击目标的贡献
+        betas = -np.ones_like(alphas)
+        # 计算正向扰动和负向扰动的差距
+        sal_map = np.abs(alphas) * np.abs(betas) * np.sign(alphas * betas)
+        # 最佳像素和扰动方向 # 有目标攻击选择
+        index = np.argmax(sal_map)
+        # 转换成(p1,p2)格式
+        index = np.unravel_index(index, mask.shape)
+        pixel_sign = np.sign(alphas)[index]
+        return index, pixel_sign

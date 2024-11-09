@@ -13,11 +13,8 @@ class DeepFool(BaseModel):
         DeepFool
 
         https://arxiv.org/abs/1511.04599
-
         https://github.com/LTS4/DeepFool
-
         https://github.com/aminul-huq/DeepFool
-
         https://medium.com/@aminul.huq11/pytorch-implementation-of-deepfool-53e889486ed4
         :param model: 模型
         :param overshoot: 最大限制
@@ -29,14 +26,15 @@ class DeepFool(BaseModel):
         self.overshoot = overshoot
         self.iters = iters
 
-    def test_attack_args(self, image, target, **kwargs):
-        return (image,)
+    def gen_target(self, target):
+        return target
 
-    def attack(self, image):
+    def attack(self, image, target):
         """
         # DeepFool
         只接受 batch_size = 1 的数据
         :param image: 需要处理的张量
+        :param target: 这里的标签没有用的
         :return: 生成的对抗样本
         """
         assert image.size(0) == 1, ValueError("只接受 batch_size = 1 的数据")

@@ -26,20 +26,15 @@ class L_BFGS(BaseModel):
         self.iters = iters
         self.lr = lr
 
-    def test_attack_args(self, image, target, **kwargs):
-        # 生成错误标签，这里可替换成需要攻击的标签
-        attack_target = [(i + 1) % 10 for i in target]
-        return image, attack_target
-
-    def attack(self, image, attack_target):
+    def attack(self, image, target):
         """
         :param image: 需要攻击的样本
         :param attack_target: 攻击的标签
         :return: 对抗样本
         """
         pert_image = image.clone().detach().to(self.device)
-
-        attack_target = self.totensor(attack_target)
+        # 生成错误标签，这里可替换成需要攻击的标签
+        attack_target = self.totensor([(i + 1) % 10 for i in target])
 
         self.model.eval()
 
