@@ -2,6 +2,7 @@ __pycache__/
 
 .idea/
 .vscode/
+
 venv/
 test/
 
@@ -10,7 +11,7 @@ parameter/**/*.pth
 datasets/
 !datasets/download.py
 
-output/
+output/*
 !output/.gitkeep
 
 tensorboard/*

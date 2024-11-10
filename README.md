@@ -43,6 +43,8 @@
 
 ## 安装
 
+* Python-3.10 + Cuda-11.7 + Cudnn-8800
+
 ```shell
 git clone https://github.com/gralliry/Adversarial-Attack-Generation-Techniques.git
 cd Adversarial-Attack-Generation-Techniques
@@ -69,11 +71,13 @@ python contrast.py -m FGSM
 ```shell
 # -m 指定攻击方法
 # L-BFGS、FGSM、I-FGSM、JSMA、单像素、c&w、deepfool、mi-fgsm、翻转
-# -c 指定测试运行次数，可选，默认值为 500
-python test.py -m FGSM -c 100
+# -c 指定测试运行次数，可选，默认值为 1000
+python test.py -m FGSM -c 1000
 ```
 
-## 训练 UPSET 方法的扰动生成模型
+## 例外：训练 UPSET 方法的扰动生成模型
+
+UPSET方法需要单独训练一个扰动生成模型
 
 ```shell
 # -t --target 指定扰动生成模型的目标标签
@@ -81,14 +85,14 @@ python test.py -m FGSM -c 100
 # -e --epoch 指定训练 epoch 的数量，可选，默认为 100
 # -lr --learning_rate 指定学习率，可选，默认为 1e-3
 
-# 训练扰动模型需要一个识别模型，请在脚本中修改或加载
+# 训练扰动模型需要一个已经训练的识别模型，请在脚本中修改或加载参数文件
 python train_residual_model.py -t 0 -e 100
 ```
 
 ## 测试最佳工作线程数
 
 ```shell
-# Run and select the best number of workers based on execution time
+# 运行并根据执行时间选择最佳工作线程数
 python test_num_workers.py
 ```
 
