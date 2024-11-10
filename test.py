@@ -18,7 +18,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-m', '--method', required=True,
                     choices=['L-BFGS', "FGSM", 'I-FGSM', 'JSMA', 'ONE-PIXEL', 'C&W', 'DEEPFOOL', 'MI-FGSM', 'UPSET'],
                     help="Test method: L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, C&W, DEEPFOOL, MI-FGSM, UPSET")
-parser.add_argument('-c', '--count', default=500, type=int,
+parser.add_argument('-c', '--count', default=1000, type=int,
                     help="Number of tests (default is 500), but if the number of test datasets is less than this "
                          "number, the number of test datasets prevails")
 args = parser.parse_args()
@@ -32,6 +32,7 @@ def main():
 
     test_datasets = datasets.CIFAR10("./datasets", train=False, transform=transform_test)
 
+    # 有一些方法是支持batch_size不为1的，按方法设置就行，如果不知道，那就保持1
     dataloader = DataLoader(test_datasets, batch_size=1, shuffle=False, num_workers=4, drop_last=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -40,9 +41,10 @@ def main():
 
     model = IndentifyModel().to(device)
     # -------------------------------------------
-    # Here you can load the already trained model parameter file
-    warnings.warn(f"You Must Load The Parameter of Model: {model.__class__.__name__}")
-    # model.load_state_dict(torch.load("./parameter/ResNet/train_100_0.9126999974250793.pth"))
+    # 在这里，您可以加载已训练的模型参数文件
+    # warnings.warn(f"You Must Load The Parameter of Model: {model.__class__.__name__}")
+    # 加载了就可以把警告删了
+    model.load_state_dict(torch.load(f"./parameter/{model.__class__.__name__}/100.pth"))
 
     print("预训练模型加载完成")
 
@@ -91,13 +93,6 @@ def main():
         return
     # -------------------------------------------
     # begin to test
-    """
-    测试模型正确率
-    :param model: 识别模型
-    :param dataloader: 数据加载器
-    :param max_counter: 最大测试次数
-    :return:
-    """
     # 计数器
     counter = 0
     max_counter = min(args.count, len(dataloader))
@@ -105,29 +100,40 @@ def main():
     batch_size = dataloader.batch_size
     # 整体正确率
     total_num = 0
-    total_accuracy = 0
-    model.eval()
+    total_origin_accuracy = 0
+    total_attack_accuracy = 0
 
-    tqdm_dataloader = tqdm(dataloader, desc="Test:")
+    model.eval()
+    # 这里按照你设置的max_count和数据集数量的最小值
+    tqdm_dataloader = tqdm(dataloader, desc="Test", total=max_counter)
     for image, target in tqdm_dataloader:
+        # 更新进度条
         image, target = image.to(device), target.to(device)
 
-        # 生成攻击图像
+        # 初始结果（未攻击）
+        orinal_output = attacker.forward(image)
+
+        # 生成攻击图像 # 攻击后结果
         pert_image = attacker.attack(image, target)
-        # 正确模型图像
-        output = attacker.forward(pert_image)
+        attack_output = attacker.forward(pert_image)
 
         counter += 1
         total_num += batch_size
-        accuracy = (output.argmax(1) == target).sum()
-        total_accuracy += accuracy
+        attack_accuracy = (attack_output.argmax(1) == target).sum()
+        origin_accuracy = (orinal_output.argmax(1) == target).sum()
 
-        tqdm_dataloader.set_postfix(No=counter, Acc=f"{accuracy / batch_size}")
+        total_origin_accuracy += origin_accuracy
+        total_attack_accuracy += attack_accuracy
 
-        if counter >= max_counter:
+        tqdm_dataloader.set_postfix(AttackAcc=f"{attack_accuracy / batch_size}",
+                                    OriginAcc=f"{origin_accuracy / batch_size}")
+
+        if tqdm_dataloader.n >= max_counter:
             break
 
-    print(f"{attacker.__class__.__name__}正确率: {total_accuracy / (max_counter * batch_size)}")
+    print(f"{attacker.__class__.__name__} "
+          f"初始正确率: {total_origin_accuracy / (max_counter * batch_size)} "
+          f"攻击后正确率: {total_attack_accuracy / (max_counter * batch_size)} ")
 
 
 if __name__ == "__main__":

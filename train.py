@@ -16,7 +16,7 @@ from models import IndentifyModel
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("-e", "--epoch", default=30, type=int, help="Training times")
+parser.add_argument("-e", "--epoch", default=100, type=int, help="Training times")
 
 args = parser.parse_args()
 
@@ -33,23 +33,23 @@ def main():
         transforms.ToTensor(),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
     ])
-    # dataset
+    # 数据集
     train_datasets = CIFAR10("./datasets", train=True, transform=transform_train)
 
     test_datasets = CIFAR10("./datasets", train=False, transform=transform_test)
 
-    # dataloader
-    train_dataloader = DataLoader(train_datasets, batch_size=256, shuffle=True, num_workers=4)
-    test_dataloader = DataLoader(test_datasets, batch_size=256, shuffle=False, num_workers=0)
+    # 数据加载器
+    train_dataloader = DataLoader(train_datasets, batch_size=1024, shuffle=True, num_workers=4)
+    test_dataloader = DataLoader(test_datasets, batch_size=1024, shuffle=False, num_workers=0)
 
-    # device
+    # 设备
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Using device:", device)
 
-    # loss function
+    # 损失函数
     loss_fn = torch.nn.CrossEntropyLoss().to(device)
 
-    # network model
+    # 识别模型（原本的模型）
     # https://github.com/kuangliu/pytorch-cifar
 
     model = IndentifyModel()
@@ -61,23 +61,22 @@ def main():
 
     model_name = model.__class__.__name__
 
-    # optimizer
+    # 优化器
     """
-    In terms of loss function, SGD(stochastic gradient descent), SGD(stochastic gradient Descent),
-    Two optimizers, Adam (Adaptive Moment Estimation) and SGD (Adaptive Moment Estimation), are selected. 
-    In practice, SGD stochastic gradient descent is found to be better for the optimization of this experiment.
+    在损失函数方面选择了两个优化器，Adam （Adaptive Moment Estimation） 和 SGD （Adaptive Moment Estimation）。
+    在实践中，发现 SGD 随机梯度下降更适合该实验的优化。
     """
-    # learning rate
+    # 学习率
     learning_rate = 1e-3
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
-    # use Cosine Annealing to adjust learning rate
+    # 使用 Cosine Annealing余弦退火 调整学习率
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
 
     os.makedirs(f"./tensorboard/{model_name}", exist_ok=True)
     os.makedirs(f"./parameter/{model_name}", exist_ok=True)
-    # Training process recorder
+    # 训练过程记录器
     writer = SummaryWriter(f"./tensorboard/{model_name}")
-    # The number of training rounds
+    # 训练轮数
     for epoch in range(1, args.epoch + 1):
         model.train()
         train_num = 0
@@ -114,16 +113,16 @@ def main():
             test_loss += loss.item()
             test_accuracy += (output.argmax(1) == targets).sum()
 
-        # Record the accuracy and loss of the total train step
+        # 记录总训练步长的精度和损失
         print(f"test loss: {test_loss / test_num}")
         writer.add_scalar("test_loss", test_loss / test_num, epoch)
         print(f"test accuracy: {test_accuracy / test_num}")
         writer.add_scalar("test_accuracy", test_accuracy / test_num, epoch)
 
-        # Save the training parameter file
+        # 保存训练参数文件
         torch.save(model.state_dict(), f"./parameter/{model_name}/{epoch}.pth")
 
-        # Adjust learning rate
+        # 调整学习率
         scheduler.step()
     # tensorboard --logdir=tensorboard/{model_name} --port=6008
     writer.close()

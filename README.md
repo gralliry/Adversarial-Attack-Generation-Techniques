@@ -1,46 +1,47 @@
-# Adversarial Attack Generation Techniques
+# 对抗攻击生成技术（Adversarial Attack Generation Techniques）
 
-## File Overview
+## 文件概述
 
 ```
 │
-├── attack  # Folder containing attack model classes
+├── attack  # 包含攻击模型类的文件夹
 │    └── fgsm.py
 │    └── ...
 │
-├── datasets          # Folder for datasets
-│    └── download.py  # Script to download datasets
+├── datasets          # 数据集文件夹
+│    └── download.py  # 用于下载数据集的脚本
 │
-├── parameter         # Folder for model parameters
+├── parameter         # 模型参数文件夹
 │    └── ResNet
 │    │    └── ...pth
 │    └── ...
 │    │ 
-│    └── UPSET             # Folder for perturbation generation model parameters used by UPSET
-│         └── target_0     # Target folders corresponding to perturbation generation model parameters
+│    └── UPSET             # UPSET 使用的扰动生成模型参数文件夹
+│         └── target_0     # 对应于扰动生成模型参数的目标文件夹
 │         │    └── ...pth
 │         └── target_1
 │         └── ...
 │
 ├── models       
-│    └── resnet.py  # Recognition model class
+│    └── resnet.py  # 识别模型类
 │    └── ...
 │
-├── report                   # Folder for attack effect visualization
+├── report                   # 用于攻击效果结果的文件夹
 │ 
-├── tensorboard              # Folder for tensorboard training process logs
+├── tensorboard              # Tensorboard 训练过程日志文件夹
 │
-├── contrast.py              # Visualization of attack effects, requires a graphical interface
+├── contrast.py              # 攻击效果的可视化，需要图形界面，无图形化
 │
-├── test.py                  # Test accuracy after attack
+├── test.py                  # 攻击后测试准确性
 │
-├── test_num_workers.py      # Test the optimal number of workers
+├── test_num_workers.py      # 测试最佳工作线程数量
 │
-├── train.py                 # Train recognition model
+├── train.py                 # 训练识别模型
 │
-└── train_residual_model.py  # Train the perturbation generation model for UPSET method
+└── train_residual_model.py  # 训练 UPSET 方法的扰动生成模型
 ```
-## Installation
+
+## 安装
 
 ```shell
 git clone https://github.com/gralliry/Adversarial-Attack-Generation-Techniques.git
@@ -48,49 +49,49 @@ cd Adversarial-Attack-Generation-Techniques
 pip install -r requirements.txt
 ```
 
-## Train Recognition Model
+## 训练识别模型
 
 ```shell
-# -e --epoch specifies the number of training epochs, optional, default is 100
+# -e --epoch 指定训练 epoch 的数量，可选，默认为 100
 python train.py -e 100
 ```
 
-## Visualize Attack Effects
+## 可视化攻击效果
 
 ```shell
-# -m specifies the attack method
+# -m 指定攻击方法
 # L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, C&W, DEEPFOOL, MI-FGSM, UPSET
 python contrast.py -m FGSM
 ```
 
-## Test Accuracy After Attack
+## 攻击后测试准确性
 
 ```shell
-# -m specifies the attack method
-# L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, C&W, DEEPFOOL, MI-FGSM, UPSET
-# -c specifies the number of test runs, optional, default is 500
+# -m 指定攻击方法
+# L-BFGS、FGSM、I-FGSM、JSMA、单像素、c&w、deepfool、mi-fgsm、翻转
+# -c 指定测试运行次数，可选，默认值为 500
 python test.py -m FGSM -c 100
 ```
 
-## Train Perturbation Generation Model for UPSET Method
+## 训练 UPSET 方法的扰动生成模型
 
 ```shell
-# -t --target specifies the target label for the perturbation generation model
-# Range is 0 ~ 9, corresponding to plane, automobile, bird, cat, deer, dog, frog, horse, ship, truck
-# -e --epoch specifies the number of training epochs, optional, default is 100
-# -lr --learning_rate specifies the learning rate, optional, default is 1e-3
+# -t --target 指定扰动生成模型的目标标签
+# 范围是 0 ~ 9，对应飞机、汽车、鸟、猫、鹿、狗、青蛙、马、船、卡车
+# -e --epoch 指定训练 epoch 的数量，可选，默认为 100
+# -lr --learning_rate 指定学习率，可选，默认为 1e-3
 
-# Training the perturbation model requires a recognition model, please modify or load it in the script
+# 训练扰动模型需要一个识别模型，请在脚本中修改或加载
 python train_residual_model.py -t 0 -e 100
 ```
 
-## Test Optimal Number of Workers
+## 测试最佳工作线程数
 
 ```shell
 # Run and select the best number of workers based on execution time
 python test_num_workers.py
 ```
 
-## Contributors
+## 贡献者
 
 - Liang Jianye - SCAU

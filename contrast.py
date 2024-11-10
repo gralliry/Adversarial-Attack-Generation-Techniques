@@ -27,7 +27,7 @@ classes = ('plane', 'automobile', 'bird', 'cat', 'deer',
            'dog', 'frog', 'horse', 'ship', 'truck')
 
 
-def show(images, texts):
+def show(images, texts, is_show=False, is_save=True, save_path="./output.png"):
     # 创建一个4x1的子图布局
     fig, axes = plt.subplots(1, len(images))
 
@@ -41,8 +41,11 @@ def show(images, texts):
 
     # 调整布局，避免重叠
     plt.tight_layout()
+    if is_save:
+        plt.savefig(save_path, dpi=300)
     # 展示图像
-    plt.show()
+    if is_show:
+        plt.show()
 
 
 def main():
@@ -59,9 +62,9 @@ def main():
 
     criterion = torch.nn.CrossEntropyLoss().to(device)
 
-    # Here you can load the already trained model parameter file
+    # 在这里，您可以加载已训练的模型参数文件
     model = IndentifyModel().to(device)
-    model.load_state_dict(torch.load("./parameter/ResNet/train_100_0.9126999974250793.pth"))
+    model.load_state_dict(torch.load("./parameter/ResNet/100.pth"))
 
     print("The pre-training model is loaded")
     # ----------------------------------------------------------
@@ -94,10 +97,10 @@ def main():
         attacker = MI_FGSM(model=model, criterion=criterion)
     elif method == "UPSET":
         # Disturbance generation model
-        # -------------------Load the UPSET disturbance model here-------------------
-        # If this attack method is not selected, it can be ignored
+        # 如果未选择此攻击方法，则可以忽略它
         residual_model = ResidualModel().to(device)
-        residual_model.load_state_dict(torch.load("./parameter/UPSET/target_0/0.9653946161270142.pth"))
+        # -------------------在此处加载 UPSET 干扰生成模型-------------------
+        residual_model.load_state_dict(torch.load("./parameter/UPSET/target_0/0.pth"))
         # UPSET
         attacker = UPSET(model=residual_model)
     else:
@@ -107,7 +110,7 @@ def main():
 
     print("The attack model has been created")
     # 开始测试
-    for image, target in dataloader:
+    for index, (image, target) in enumerate(dataloader):
         image, target = image.to(device), target.to(device)
 
         origin_output = attacker.forward(image)
@@ -116,13 +119,17 @@ def main():
 
         attack_output = model(attack_image)
         print("Generation complete.")
-        # Show the comparison using matplotlib
+        # 使用 matplotlib 显示比较
         show(
-            [image, attack_image],
             [
+                image,
+                attack_image
+            ], [
                 f"True: {classes[target[0]]}  Predict: {classes[origin_output.argmax(1)[0]]}",
                 f"Attacked: {classes[attack_output.argmax(1)[0]]}",
-            ]
+            ],
+            is_show=False,
+            is_save=True, save_path=f"./output/{attacker.__class__.__name__}/{index}.png"
         )
 
         input("Enter any press enter to continue generating...")
