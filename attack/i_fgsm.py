@@ -12,11 +12,11 @@ class I_FGSM(BaseModel):
         I-FGSM
 
         https://github.com/1Konny/FGSM?tab=readme-ov-file
-        :param model: 模型
-        :param criterion: 损失函数
-        :param epsilon: 扰动幅度（最大扰动限制）
-        :param iters: 迭代次数
-        :param cuda: 是否启动cuda
+        :param model:
+        :param criterion: Loss function
+        :param epsilon:   Disturbance amplitude (maximum disturbance limit)
+        :param iters:     The number of iterations
+        :param cuda:      Whether to start CUDA
         """
         super().__init__(model=model, cuda=cuda)
 
@@ -27,29 +27,29 @@ class I_FGSM(BaseModel):
     def attack(self, image, target):
         """
         I-FGSM
-        :param image: 需要处理的张量
-        :param target: 正确的标签值
-        :return: 生成的对抗样本
+        :param image:  Tensors that need to be processed
+        :param target: Correct tag value
+        :return:       Adversarial sample generated
         """
         pert_image = image.clone().detach().requires_grad_(True)
-        # 迭代步长
+        # Iteration step size
         alpha = self.epsilon / self.iters
 
         self.model.eval()
         with torch.set_grad_enabled(True):
-            # 进行迭代
+            # Iterate
             for _ in range(self.iters):
-                # 正向传播
+                # Forward propagation
                 outputs = self.model(pert_image)
                 self.model.zero_grad()
-                # 计算损失（针对目标攻击的负对数似然）
+                # Calculate the loss
                 loss = self.criterion(outputs, target)
                 loss.backward()
-                # 梯度上升 # 利用梯度符号进行扰动，同时限制扰动的大小
+                # Gradient Rise # Utilize gradient symbols to perturb while limiting the size of the perturbation
                 pert_image = pert_image + alpha * pert_image.grad.sign()
-                # 确保扰动后的图像仍然是有效的输入（在 [0, 1] 范围内）
+                # Make sure the perturbed image is still a valid input (in the range of [0, 1])
                 pert_image = torch.clamp(pert_image, 0, 1)
-                # 达到最大扰动，直接退出
+                # When the maximum perturbation is reached, exit directly
                 if torch.norm((pert_image - image), p=float('inf')) > self.epsilon:
                     break
 

@@ -37,24 +37,24 @@ def main():
         transforms.ToTensor(),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
     ])
-    # 数据集
+    # DataSet
     train_datasets = CIFAR10("./datasets", train=True, transform=transform_train)
 
     test_datasets = CIFAR10("./datasets", train=False, transform=transform_test)
 
-    # 数据加载器
+    # DataLoader
     train_dataloader = DataLoader(train_datasets, batch_size=128, shuffle=True, num_workers=4, drop_last=True)
     test_dataloader = DataLoader(test_datasets, batch_size=128, shuffle=False, num_workers=0, drop_last=True)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    # -------------------在此处加载识别模型-------------------
+    # -------------------Load the recognition model here-------------------
     right_model = IndentifyModel().to(device)
     warnings.warn(f"You Must Load The Parameter of Model: {right_model.__class__.__name__}")
     # right_model.load_state_dict(torch.load("./parameter/ResNet/30.pth"))
     right_model.eval()
 
-    # -------------------在此处加载 UPSET 干扰模型-------------------
+    # -------------------Load the UPSET interference model here-------------------
     residual_model = attack.ResidualModel().to(device)
 
     loss_fn = nn.CrossEntropyLoss().to(device)
@@ -64,10 +64,10 @@ def main():
 
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
 
-    # attack_targets 为 0-9
+    # attack_targets is 0-9
     attack_targets = torch.tensor([attack_target for _ in range(train_dataloader.batch_size)], device=device)
 
-    # 记录准确率
+    # Recording accuracy
     attacked_accuracy = 0
     predict_accuracy = 0
     total_num = 0

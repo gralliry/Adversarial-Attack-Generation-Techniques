@@ -8,9 +8,9 @@ import warnings
 
 import argparse
 
-# 识别模型
+# Identify model
 from models import IndentifyModel
-# 对抗模型
+# Adversarial model
 from attack import FGSM, I_FGSM, MI_FGSM, L_BFGS, DeepFool, CW, JSMA, ONE_PIXEL, UPSET, ResidualModel
 
 parser = argparse.ArgumentParser()
@@ -28,22 +28,22 @@ classes = ('plane', 'automobile', 'bird', 'cat', 'deer',
 
 
 def show(images, texts, is_show=False, is_save=True, save_path="./output.png"):
-    # 创建一个4x1的子图布局
+    # Create a 4x1 subgraph layout
     fig, axes = plt.subplots(1, len(images))
 
     for i, image in enumerate(images):
-        # 将张量转换为 NumPy 数组
+        # Convert tensors to NumPy arrays
         numpy_image = torch.clamp(image, 0, 1).detach().squeeze(dim=0).permute(1, 2, 0).cpu().numpy()
 
-        # 展示图像
+        # Show the images
         axes[i].imshow(numpy_image)
         axes[i].set_title(texts[i])
 
-    # 调整布局，避免重叠
+    # Adjust the layout to avoid overlapping
     plt.tight_layout()
     if is_save:
         plt.savefig(save_path, dpi=300)
-    # 展示图像
+    # Show the images
     if is_show:
         plt.show()
 
@@ -62,7 +62,7 @@ def main():
 
     criterion = torch.nn.CrossEntropyLoss().to(device)
 
-    # 在这里，您可以加载已训练的模型参数文件
+    # Here, you can load the trained model parameter file
     model = IndentifyModel().to(device)
     model.load_state_dict(torch.load("./parameter/ResNet/100.pth"))
 
@@ -97,9 +97,9 @@ def main():
         attacker = MI_FGSM(model=model, criterion=criterion)
     elif method == "UPSET":
         # Disturbance generation model
-        # 如果未选择此攻击方法，则可以忽略它
+        # If this attack method is not chosen, it can be ignored
         residual_model = ResidualModel().to(device)
-        # -------------------在此处加载 UPSET 干扰生成模型-------------------
+        # -------------------Load the UPSET interference generation model here-------------------
         residual_model.load_state_dict(torch.load("./parameter/UPSET/target_0/0.pth"))
         # UPSET
         attacker = UPSET(model=residual_model)
@@ -109,7 +109,7 @@ def main():
     # ----------------------------------------------------------
 
     print("The attack model has been created")
-    # 开始测试
+    # Start testing
     for index, (image, target) in enumerate(dataloader):
         image, target = image.to(device), target.to(device)
 
@@ -119,7 +119,7 @@ def main():
 
         attack_output = model(attack_image)
         print("Generation complete.")
-        # 使用 matplotlib 显示比较
+        # Comparisons are displayed using matplotlib
         show(
             [
                 image,

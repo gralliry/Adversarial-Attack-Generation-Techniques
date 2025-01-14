@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Description: 按运行时间选择最佳 num worker 数量
+# @Description: Select the optimal number of num workers by uptime
 from time import time
 import multiprocessing as mp
 import torch
@@ -17,8 +17,8 @@ if __name__ == "__main__":
     trainset = torchvision.datasets.CIFAR10(
         root='./datasets/',
         train=True,
-        # 如果为 true，则从 Internet 下载数据集并将其放在目录中。
-        # 如果数据集已下载，则不会再次下载。
+        # If true, the dataset is downloaded from the internet and placed in a directory.
+        # If the dataset has already been downloaded, it will not be downloaded again.
         download=True,
         transform=transform
     )

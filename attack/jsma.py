@@ -18,11 +18,11 @@ class JSMA(BaseModel):
         https://github.com/guidao20/MJSMA_JSMA/blob/master/MJSMA_JSMA.py
 
         https://github.com/FenHua/Adversarial-Examples/blob/master/%E9%BB%91%E7%9B%92/JSMA/JSMA.ipynb
-        :param model: 模型
-        :param alpha: 扰动步长
-        :param gamma: 定义变化极限/边界
-        :param iters: 最大循环/寻找次数/改变的像素的数量
-        :param cuda: 是否启动cuda
+        :param model:
+        :param alpha: Perturbation step size
+        :param gamma: Define the limits of change/boundaries
+        :param iters: Maximum number of loops/looks/number of changed pixels
+        :param cuda:  Whether to start CUDA
         """
         super().__init__(model=model, cuda=cuda)
 
@@ -33,65 +33,65 @@ class JSMA(BaseModel):
     def attack(self, image, target):
         """
         JSMA
-        :param image: 图像
-        :param attack_target: 攻击的标签
+        :param image:
+        :param attack_target: Tag of the attack
         :return:
         """
-        assert image.size(0) == 1, ValueError("只接受 batch_size = 1 的数据")
+        assert image.size(0) == 1, ValueError("Only data with batch_size = 1 will be accepted")
 
         pert_image = image.clone().detach().requires_grad_(True)
-        # 生成欺骗标签
-        # 这里的fool_target元素数量要和batch_size相同
-        # 这里只是单纯生成错误的标签，并没有指定标签
+        # Generate spoofed labels
+        # The number of fool_target elements here should be the same as batch_size
+        # This is just a simple generation of wrong tags, and no tags are specified
         attack_target = (target + 1) % 10
-        # 定义搜索域，修改后的位置置零，下一次不再计算
+        # Define the search field, set the modified position to zero, and no longer calculate it next time
         mask = np.ones(pert_image.shape)
-        # 评估模式
+        # Evaluation mode
         self.model.eval()
         with torch.set_grad_enabled(True):
             for _ in range(self.iters):
                 output = self.model(pert_image)
-                # 这里仅适合 batch_size 为 1 的判断
+                # This is only appropriate for a judgment where batch_size is 1
                 if output.argmax(1) == attack_target:
-                    # 攻击成功，停止迭代
+                    # If the attack is successful, the iteration is stopped
                     break
-                # 梯度清零
+                # Gradient clearing
                 if pert_image.grad is not None:
                     pert_image.grad.zero_()
-                # 对每个图像进行反向传播
+                # Backpropagation is performed on each image
                 output[0, attack_target[0]].backward(retain_graph=True)
-                # 生成扰动点和扰动大小
+                # Generate perturbation points and perturbation sizes
                 index, pix_sign = self.saliency_map(pert_image, mask)
-                # 添加 扰动 到 对抗样本
+                # Add Perturbation to Adversarial Samples
                 pert_image.data[index] += pix_sign * self.alpha * self.gamma
-                # 达到极限的点不再参与更新
+                # Points that have reached the limit no longer participate in the update
                 if not -self.gamma <= pert_image.data[index] <= self.gamma:
-                    # 限制扰动
+                    # Limit perturbations
                     pert_image.data[index] = torch.clamp(pert_image.data[index], -self.gamma, self.gamma)
-                    # 搜索域对应的像素置零，表示该点不再参与计算更新
+                    # The pixel corresponding to the search field is zeroed, indicating that the point is no longer involved in the calculation update
                     mask[index] = 0
 
         return pert_image
 
-    # 计算显著图
+    # Calculate saliency plots
     @staticmethod
     def saliency_map(image, mask):
         """
-        此方法为beta参数的简化版本，注重攻击目标贡献大的点
-        :param image: 输入的图像
-        :param mask: 标记位，记录已经访问的点的坐标
+        This method is a simplified version of the beta parameter and focuses on the points where the attack target contributes the most
+        :param image:
+        :param mask: Marker bits, which record the coordinates of the points that have been visited
         :return:
         """
         derivative = image.grad.data.cpu().numpy().copy()
-        # 预测 对攻击目标的贡献 # 对于搜索过的点设置为0
+        # Prediction Contribution to Attack Target # is set to 0 for searched points
         alphas = derivative * mask
-        # 预测对非攻击目标的贡献
+        # Predict the contribution to non-attack targets
         betas = -np.ones_like(alphas)
-        # 计算正向扰动和负向扰动的差距
+        # Calculate the gap between positive and negative perturbations
         sal_map = np.abs(alphas) * np.abs(betas) * np.sign(alphas * betas)
-        # 最佳像素和扰动方向 # 有目标攻击选择
+        # Best pixel and perturbation direction
         index = np.argmax(sal_map)
-        # 转换成(p1,p2)格式
+        # Convert to (p1, p2) format
         index = np.unravel_index(index, mask.shape)
         pixel_sign = np.sign(alphas)[index]
         return index, pixel_sign

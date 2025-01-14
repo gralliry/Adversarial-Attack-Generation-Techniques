@@ -14,9 +14,9 @@ class FGSM(BaseModel):
         https://github.com/1Konny/FGSM?tab=readme-ov-file
 
         https://github.com/Harry24k/FGSM-pytorch/blob/master/FGSM.ipynb
-        :param model: 模型
-        :param criterion: 损失函数
-        :param epsilon: 扰动幅度
+        :param model:
+        :param criterion: Loss function
+        :param epsilon:   Amplitude of disturbance
         """
         super().__init__(model=model, cuda=cuda)
 
@@ -26,26 +26,26 @@ class FGSM(BaseModel):
     def attack(self, image, target):
         """
         FGSM
-        :param image: 需要处理的张量
-        :param target: 正确的标签值
-        :return: 生成的对抗样本
+        :param image:  Tensors that need to be processed
+        :param target: Correct tag value
+        :return:       Adversarial sample generated
         """
-        # 设置输入张量的 requires_grad 为 True 计算梯度
+        # Set the requires_grad of the input tensor to True to calculate the gradient
         pert_image = image.clone().detach().requires_grad_(True)
-        # 设置评估模式，但正常计算梯度
+        # The evaluation mode is set, but the gradient is calculated normally
         self.model.eval()
         with torch.set_grad_enabled(True):
-            # 使用模型进行前向传播
+            # Use the model for forward propagation
             output = self.model(pert_image)
-            # 将模型参数的梯度归零
+            # Zeroing the gradient of the model parameters
             self.model.zero_grad()
-            # 计算损失函数
+            # Calculate the loss function
             loss = self.criterion(output, target)
-            # 反向传播，计算梯度
+            # Backpropagation, calculating the gradient
             loss.backward()
-            # 进行梯度上升 # 利用梯度符号进行扰动
+            # Perform a gradient ascent # Perturbation with gradient symbols
             pert_image = pert_image + self.epsilon * pert_image.grad.sign()
-            # 将生成的对抗样本限制在[0, 1]范围内
+            # Limit the generated adversarial samples to the range of [0, 1].
             pert_image = torch.clamp(pert_image, 0, 1)
 
         return pert_image

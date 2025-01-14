@@ -32,7 +32,7 @@ def main():
 
     test_datasets = datasets.CIFAR10("./datasets", train=False, transform=transform_test)
 
-    # 有一些方法是支持batch_size不为1的，按方法设置就行，如果不知道，那就保持1
+    # There are some methods that support batch_size is not 1, just set it according to the method, if you don't know, then keep 1
     dataloader = DataLoader(test_datasets, batch_size=1, shuffle=False, num_workers=4, drop_last=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -41,12 +41,12 @@ def main():
 
     model = IndentifyModel().to(device)
     # -------------------------------------------
-    # 在这里，您可以加载已训练的模型参数文件
+    # Here, you can load the trained model parameter file
     # warnings.warn(f"You Must Load The Parameter of Model: {model.__class__.__name__}")
-    # 加载了就可以把警告删了
+    # Once loaded, you can delete the warning
     model.load_state_dict(torch.load(f"./parameter/{model.__class__.__name__}/100.pth"))
 
-    print("预训练模型加载完成")
+    print("The pretrained model is loaded")
 
     # -------------------------------------------
     method = args.method.upper()
@@ -93,28 +93,28 @@ def main():
         return
     # -------------------------------------------
     # begin to test
-    # 计数器
     counter = 0
     max_counter = min(args.count, len(dataloader))
     print(f"Total Test Num: {max_counter}")
     batch_size = dataloader.batch_size
-    # 整体正确率
+    # Overall accuracy
     total_num = 0
     total_origin_accuracy = 0
     total_attack_accuracy = 0
 
     model.eval()
-    # 这里按照你设置的max_count和数据集数量的最小值
+    # This is based on the minimum number of max_count and datasets you set
     tqdm_dataloader = tqdm(dataloader, desc="Test", total=max_counter)
     for image, target in tqdm_dataloader:
-        # 更新进度条
+        # Update the progress bar
         image, target = image.to(device), target.to(device)
 
-        # 初始结果（未攻击）
+        # Initial results (not attacked)
         orinal_output = attacker.forward(image)
 
-        # 生成攻击图像 # 攻击后结果
+        # Generate an attack image
         pert_image = attacker.attack(image, target)
+        # post-attack result
         attack_output = attacker.forward(pert_image)
 
         counter += 1
@@ -132,8 +132,8 @@ def main():
             break
 
     print(f"{attacker.__class__.__name__} "
-          f"初始正确率: {total_origin_accuracy / (max_counter * batch_size)} "
-          f"攻击后正确率: {total_attack_accuracy / (max_counter * batch_size)} ")
+          f"Initial      accuracy rate: {total_origin_accuracy / (max_counter * batch_size)} "
+          f"After-attack accuracy rate: {total_attack_accuracy / (max_counter * batch_size)} ")
 
 
 if __name__ == "__main__":

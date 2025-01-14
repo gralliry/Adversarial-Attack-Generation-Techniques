@@ -4,7 +4,7 @@ from torchvision import datasets
 
 DOWNLOAD = True
 
-# 准备数据集
+# Download the dataset
 train_datasets = datasets.CIFAR10("./", train=True, download=DOWNLOAD)
 
 test_datasets = datasets.CIFAR10("./", train=False, download=DOWNLOAD)

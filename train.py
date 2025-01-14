@@ -33,24 +33,24 @@ def main():
         transforms.ToTensor(),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
     ])
-    # 数据集
+    # DataSet
     train_datasets = CIFAR10("./datasets", train=True, transform=transform_train)
 
     test_datasets = CIFAR10("./datasets", train=False, transform=transform_test)
 
-    # 数据加载器
+    # DataLoader
     train_dataloader = DataLoader(train_datasets, batch_size=1024, shuffle=True, num_workers=4)
     test_dataloader = DataLoader(test_datasets, batch_size=1024, shuffle=False, num_workers=0)
 
-    # 设备
+    # Device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Using device:", device)
 
-    # 损失函数
+    # Loss function
     loss_fn = torch.nn.CrossEntropyLoss().to(device)
 
-    # 识别模型（原本的模型）
-    # https://github.com/kuangliu/pytorch-cifar
+    # Recognition model (original model)
+
 
     model = IndentifyModel()
 
@@ -61,22 +61,22 @@ def main():
 
     model_name = model.__class__.__name__
 
-    # 优化器
+    # Optimizer
     """
-    在损失函数方面选择了两个优化器，Adam （Adaptive Moment Estimation） 和 SGD （Adaptive Moment Estimation）。
-    在实践中，发现 SGD 随机梯度下降更适合该实验的优化。
+    Two optimizers were chosen in terms of the loss function，Adam （Adaptive Moment Estimation）and SGD （Adaptive Moment Estimation）。
+    In practice, it was found that SGD stochastic gradient descent was more suitable for the optimization of this experiment.
     """
-    # 学习率
+    # Learning rate
     learning_rate = 1e-3
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
-    # 使用 Cosine Annealing余弦退火 调整学习率
+    # Use Cosine Annealing to adjust the learning rate
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
 
     os.makedirs(f"./tensorboard/{model_name}", exist_ok=True)
     os.makedirs(f"./parameter/{model_name}", exist_ok=True)
-    # 训练过程记录器
+    # Recorder
     writer = SummaryWriter(f"./tensorboard/{model_name}")
-    # 训练轮数
+    # Number of training rounds
     for epoch in range(1, args.epoch + 1):
         model.train()
         train_num = 0
@@ -113,16 +113,16 @@ def main():
             test_loss += loss.item()
             test_accuracy += (output.argmax(1) == targets).sum()
 
-        # 记录总训练步长的精度和损失
+        # Record the accuracy and loss of the total training step
         print(f"test loss: {test_loss / test_num}")
         writer.add_scalar("test_loss", test_loss / test_num, epoch)
         print(f"test accuracy: {test_accuracy / test_num}")
         writer.add_scalar("test_accuracy", test_accuracy / test_num, epoch)
 
-        # 保存训练参数文件
+        # Save the training parameter file
         torch.save(model.state_dict(), f"./parameter/{model_name}/{epoch}.pth")
 
-        # 调整学习率
+        # Adjust the learning rate
         scheduler.step()
     # tensorboard --logdir=tensorboard/{model_name} --port=6008
     writer.close()

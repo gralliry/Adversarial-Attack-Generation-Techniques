@@ -1,47 +1,49 @@
-# 对抗攻击生成技术（Adversarial Attack Generation Techniques）
+# Adversarial Attack Generation Techniques
 
-## 文件概述
+[中文版本](./assets/README.cn.md)
+
+## File overview
 
 ```
 │
-├── attack  # 包含攻击模型类的文件夹
+├── attack  # The folder that contains the attack model class
 │    └── fgsm.py
 │    └── ...
 │
-├── datasets          # 数据集文件夹
-│    └── download.py  # 用于下载数据集的脚本
+├── datasets          # Dataset folders
+│    └── download.py  # A script for downloading the dataset
 │
-├── parameter         # 模型参数文件夹
+├── parameter         # Model Parameters folder
 │    └── ResNet
 │    │    └── ...pth
 │    └── ...
 │    │ 
-│    └── UPSET             # UPSET 使用的扰动生成模型参数文件夹
-│         └── target_0     # 对应于扰动生成模型参数的目标文件夹
+│    └── UPSET             # The perturbation used by UPSET generates a folder of model parameters
+│         └── target_0     # Corresponds to the destination folder for perturbation generation model parameters
 │         │    └── ...pth
 │         └── target_1
 │         └── ...
 │
 ├── models       
-│    └── resnet.py  # 识别模型类
+│    └── resnet.py  # Identify model classes
 │    └── ...
 │
-├── report                   # 用于攻击效果结果的文件夹
+├── report                   # The folder used for the results of the attack effect
 │ 
-├── tensorboard              # Tensorboard 训练过程日志文件夹
+├── tensorboard              # Tensorboard Training process log folder
 │
-├── contrast.py              # 攻击效果的可视化，需要图形界面，无图形化
+├── contrast.py              # The visualization of the attack effect requires a graphical interface
 │
-├── test.py                  # 攻击后测试准确性
+├── test.py                  # Test post-attack accuracy
 │
-├── test_num_workers.py      # 测试最佳工作线程数量
+├── test_num_workers.py      # Test the optimal number of worker threads
 │
-├── train.py                 # 训练识别模型
+├── train.py                 # Train a recognition model
 │
-└── train_residual_model.py  # 训练 UPSET 方法的扰动生成模型
+└── train_residual_model.py  # Train a perturbation generation model for the UPSET method
 ```
 
-## 安装
+## Install
 
 * Python-3.10 + Cuda-11.7 + Cudnn-8800
 
@@ -51,51 +53,51 @@ cd Adversarial-Attack-Generation-Techniques
 pip install -r requirements.txt
 ```
 
-## 训练识别模型
+## Train the recognition model
 
 ```shell
-# -e --epoch 指定训练 epoch 的数量，可选，默认为 100
+# -e --epoch Specify the number of training epochs, optional, defaults to 100
 python train.py -e 100
 ```
 
-## 可视化攻击效果
+## Visualize the impact of the attack
 
 ```shell
-# -m 指定攻击方法
+# -m Specify the attack method
 # L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, C&W, DEEPFOOL, MI-FGSM, UPSET
 python contrast.py -m FGSM
 ```
 
-## 攻击后测试准确性
+## Test post-attack accuracy
 
 ```shell
-# -m 指定攻击方法
+# -m Specify the attack method
 # L-BFGS、FGSM、I-FGSM、JSMA、单像素、c&w、deepfool、mi-fgsm、翻转
-# -c 指定测试运行次数，可选，默认值为 1000
+# -c Specify the number of test runs, optional, defaults to 1000
 python test.py -m FGSM -c 1000
 ```
 
-## 例外：训练 UPSET 方法的扰动生成模型
+## Exception: Perturbation generation model for training the UPSET method
 
-UPSET方法需要单独训练一个扰动生成模型
+The UPSET method requires a perturbation generation model to be trained separately
 
 ```shell
-# -t --target 指定扰动生成模型的目标标签
-# 范围是 0 ~ 9，对应飞机、汽车、鸟、猫、鹿、狗、青蛙、马、船、卡车
-# -e --epoch 指定训练 epoch 的数量，可选，默认为 100
-# -lr --learning_rate 指定学习率，可选，默认为 1e-3
+# -t --target Specifies the target label for the perturbation generation model
+# The range is 0 ~ 9, corresponding to airplanes, cars, birds, cats, deer, dogs, frogs, horses, boats, trucks
+# -e --epoch Specify the number of training epochs, optional, defaults to 100
+# -lr --learning_rate Specify the learning rate, optional, defaults to 1e-3
 
-# 训练扰动模型需要一个已经训练的识别模型，请在脚本中修改或加载参数文件
+# Training a perturbation model requires a trained recognition model, which can be modified or loaded in the script
 python train_residual_model.py -t 0 -e 100
 ```
 
-## 测试最佳工作线程数
+## Test the optimal number of worker threads
 
 ```shell
-# 运行并根据执行时间选择最佳工作线程数
+# Run and select the optimal number of worker threads based on execution time
 python test_num_workers.py
 ```
 
-## 贡献者
+## Contributors
 
 - Liang Jianye - SCAU

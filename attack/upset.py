@@ -10,7 +10,7 @@ class ResidualModel(nn.Module):
     """
     UPSET
 
-    针对某个标签，输出图像，生成扰动，干净样本 + 扰动 = 攻击样本
+    For a label, an image is output, a perturbation is generated, and a clean sample + perturbation = an attack sample
     """
 
     def __init__(self):
@@ -34,10 +34,10 @@ class UPSET(BaseModel):
         UPSET
 
         https://arxiv.org/abs/1707.01159
-        :param model: 扰动生成模型 ! 扰动生成模型，不是识别模型
-        :param alpha: 迭代步长
-        :param iters: 迭代次数
-        :param cuda: 是否启动cuda
+        :param model: Perturbation generation model! Attention: Perturbation generates a model, not an identification model
+        :param alpha: Iteration step size
+        :param iters: The number of iterations
+        :param cuda:  Whether to start CUDA
         """
         super().__init__(model=model, cuda=cuda)
 
@@ -46,17 +46,17 @@ class UPSET(BaseModel):
 
     def attack(self, image, target):
         """
-        :param image: 需要处理的张量
+        :param image:
         :param target: the target is useless, leave it alone
         """
         pert_image = image.clone().detach().requires_grad_(True)
 
         for _ in range(self.iters):
-            # 输出扰动
+            # Output perturbations
             residual = self.model(pert_image)
-            # 叠加扰动到原样本
+            # Superimpose perturbations to the original sample
             pert_image = pert_image + self.alpha * residual
-            # 限制范围
+            # Limitations
             pert_image = torch.clamp(pert_image, 0, 1)
 
         return pert_image
