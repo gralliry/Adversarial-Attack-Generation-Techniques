@@ -100,4 +100,5 @@ python test_num_workers.py
 
 ## Contributors
 
-- Liang Jianye - SCAU
+- Chen Yiyi
+- Americ Garcia
