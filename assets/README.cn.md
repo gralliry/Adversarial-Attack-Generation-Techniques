@@ -98,4 +98,4 @@ python test_num_workers.py
 
 ## 贡献者
 
-- Liang Jianye - SCAU
+- JianYe Liang in SCAU
