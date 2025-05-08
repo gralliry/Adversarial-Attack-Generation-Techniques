@@ -29,19 +29,14 @@ class ResidualModel(nn.Module):
 
 
 class UPSET(BaseModel):
-    def __init__(self, model: ResidualModel, alpha=0.01, iters=5, cuda=True):
+    def __init__(self, model: ResidualModel, cuda=True):
         """
         UPSET
         https://arxiv.org/abs/1707.01159
-        :param model: Perturbation generation model! Attention: Perturbation generates a model, not an identification model
-        :param alpha: Iteration step size
-        :param iters: The number of iterations
-        :param cuda:  Whether to start CUDA
+        :param model: Perturbation generation model! Attention: Perturbation generating model, not an identification model
+        :param cuda:  Whether to use CUDA
         """
         super().__init__(model=model, cuda=cuda)
-
-        self.alpha = alpha
-        self.iters = iters
 
     def attack(self, image, target, is_targeted=False):
         """
@@ -50,13 +45,9 @@ class UPSET(BaseModel):
         :param is_targeted: useless, leave it alone
         """
         pert_image = image.clone().detach().requires_grad_(True)
-
-        for _ in range(self.iters):
-            # Output perturbations
-            residual = self.model(pert_image)
-            # Superimpose perturbations to the original sample
-            pert_image = pert_image + self.alpha * residual
-            # Limitations
-            pert_image = torch.clamp(pert_image, 0, 1)
-
+        # Superimpose perturbations to the original sample
+        # Output perturbations
+        pert_image = pert_image + self.model(pert_image)
+        # Limitations
+        pert_image = torch.clamp(pert_image, 0, 1)
         return pert_image

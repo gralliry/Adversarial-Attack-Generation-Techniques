@@ -92,9 +92,6 @@ def main():
             train_num += train_dataloader.batch_size
             train_loss += loss.item()
 
-        print(f"Train Epoch: {epoch}, Loss: {train_loss / train_num}")
-        writer.add_scalar("train_loss", train_loss / train_num, epoch)
-
         # test
         model.eval()
         test_num = 0
@@ -112,6 +109,8 @@ def main():
             test_accuracy += (output.argmax(1) == targets).sum()
 
         # Record the accuracy and loss of the total training step
+        print(f"train loss: {train_loss / train_num}")
+        writer.add_scalar("train_loss", train_loss / train_num, epoch)
         print(f"test loss: {test_loss / test_num}")
         writer.add_scalar("test_loss", test_loss / test_num, epoch)
         print(f"test accuracy: {test_accuracy / test_num}")

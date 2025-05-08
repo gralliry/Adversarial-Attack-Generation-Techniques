@@ -100,7 +100,7 @@ def main():
 
         scheduler.step()
 
-        torch.save(residual_model.state_dict(), f"{pardir}/{epoch}_{attacked_accuracy / total_num:.7f}.pth")
+        torch.save(residual_model.state_dict(), f"{pardir}/{epoch}-{attacked_accuracy / total_num:.7f}.pth")
 
         print(f"Identify success rate after prediction: {predict_accuracy / total_num}")
         print(f"Identification error rate after attack: {attacked_accuracy / total_num}")
