@@ -3,7 +3,7 @@
 import torch
 from torch import nn
 
-from .base_model import BaseModel
+from .base import BaseModel
 
 
 class ResidualModel(nn.Module):
@@ -32,7 +32,6 @@ class UPSET(BaseModel):
     def __init__(self, model: ResidualModel, alpha=0.01, iters=5, cuda=True):
         """
         UPSET
-
         https://arxiv.org/abs/1707.01159
         :param model: Perturbation generation model! Attention: Perturbation generates a model, not an identification model
         :param alpha: Iteration step size
@@ -44,10 +43,11 @@ class UPSET(BaseModel):
         self.alpha = alpha
         self.iters = iters
 
-    def attack(self, image, target):
+    def attack(self, image, target, is_targeted=False):
         """
         :param image:
-        :param target: the target is useless, leave it alone
+        :param target: useless, leave it alone
+        :param is_targeted: useless, leave it alone
         """
         pert_image = image.clone().detach().requires_grad_(True)
 

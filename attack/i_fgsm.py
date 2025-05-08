@@ -3,7 +3,7 @@
 
 import torch
 
-from .base_model import BaseModel
+from .base import BaseModel
 
 
 class I_FGSM(BaseModel):
@@ -24,11 +24,12 @@ class I_FGSM(BaseModel):
         self.epsilon = epsilon
         self.iters = iters
 
-    def attack(self, image, target):
+    def attack(self, image, target, is_targeted=False):
         """
         I-FGSM
         :param image:  Tensors that need to be processed
         :param target: Correct tag value
+        :param is_targeted: Correct tag value
         :return:       Adversarial sample generated
         """
         pert_image = image.clone().detach().requires_grad_(True)
@@ -46,7 +47,10 @@ class I_FGSM(BaseModel):
                 loss = self.criterion(outputs, target)
                 loss.backward()
                 # Gradient Rise # Utilize gradient symbols to perturb while limiting the size of the perturbation
-                pert_image = pert_image + alpha * pert_image.grad.sign()
+                if is_targeted:
+                    pert_image = pert_image - alpha * pert_image.grad.sign()
+                else:
+                    pert_image = pert_image + alpha * pert_image.grad.sign()
                 # Make sure the perturbed image is still a valid input (in the range of [0, 1])
                 pert_image = torch.clamp(pert_image, 0, 1)
                 # When the maximum perturbation is reached, exit directly

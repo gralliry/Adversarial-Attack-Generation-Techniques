@@ -2,7 +2,7 @@
 # @Description:
 import torch
 
-from .base_model import BaseModel
+from .base import BaseModel
 
 
 class CW(BaseModel):
@@ -28,7 +28,8 @@ class CW(BaseModel):
         self.cr = cr
         self.iters = iters
 
-    def attack(self, image, target):
+    def attack(self, image, target, is_targeted=False):
+        # is_targeted is useless
         assert image.size(0) == 1, ValueError("Only data with batch_size = 1 will be accepted")
 
         image = image.clone().detach().requires_grad_(True)
@@ -59,7 +60,8 @@ class CW(BaseModel):
                 total_grad += grad
                 # Overlay Perturbation # Clips the perturbated image to the range of [0,1].
                 pert_image = torch.clamp(pert_image + self.a * grad, 0, 1).requires_grad_(True)
-                # It is possible that the number of iterations reaches the upper limit and none of the specified attack tags are reached
+                # It is possible that
+                # the number of iterations reaches the upper limit and none of the specified attack tags are reached
                 # If so, it may need to be seen as a failed attack
 
         # Calculate the gradient of the average accumulation

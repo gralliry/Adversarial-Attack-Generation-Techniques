@@ -3,7 +3,7 @@
 import torch
 import numpy as np
 
-from .base_model import BaseModel
+from .base import BaseModel
 
 
 class JSMA(BaseModel):
@@ -30,11 +30,11 @@ class JSMA(BaseModel):
         self.gamma = gamma
         self.iters = iters
 
-    def attack(self, image, target):
+    def attack(self, image, target, is_targeted=False):
         """
         JSMA
         :param image:
-        :param attack_target: Tag of the attack
+        :param target: Tag of the attack
         :return:
         """
         assert image.size(0) == 1, ValueError("Only data with batch_size = 1 will be accepted")
@@ -42,10 +42,9 @@ class JSMA(BaseModel):
         pert_image = image.clone().detach().requires_grad_(True)
         # Generate spoofed labels
         # The number of fool_target elements here should be the same as batch_size
-        # This is just a simple generation of wrong tags, and no tags are specified
-        attack_target = (target + 1) % 10
         # Define the search field, set the modified position to zero, and no longer calculate it next time
         mask = np.ones(pert_image.shape)
+        attack_target = target if is_targeted else (target + 1) % 10
         # Evaluation mode
         self.model.eval()
         with torch.set_grad_enabled(True):
@@ -68,7 +67,8 @@ class JSMA(BaseModel):
                 if not -self.gamma <= pert_image.data[index] <= self.gamma:
                     # Limit perturbations
                     pert_image.data[index] = torch.clamp(pert_image.data[index], -self.gamma, self.gamma)
-                    # The pixel corresponding to the search field is zeroed, indicating that the point is no longer involved in the calculation update
+                    # The pixel corresponding to the search field is zeroed,
+                    # indicating that the point is no longer involved in the calculation update
                     mask[index] = 0
 
         return pert_image
@@ -77,7 +77,8 @@ class JSMA(BaseModel):
     @staticmethod
     def saliency_map(image, mask):
         """
-        This method is a simplified version of the beta parameter and focuses on the points where the attack target contributes the most
+        This method is a simplified version of the beta parameter and focuses on the points
+        where the attack target contributes the most
         :param image:
         :param mask: Marker bits, which record the coordinates of the points that have been visited
         :return:

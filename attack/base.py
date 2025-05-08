@@ -12,5 +12,5 @@ class BaseModel:
     def forward(self, image):
         return self.model(image)
 
-    def attack(self, image, target):
+    def attack(self, image, target, is_targeted=False):
         raise NotImplementedError

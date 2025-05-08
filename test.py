@@ -25,15 +25,16 @@ args = parser.parse_args()
 
 
 def main():
-    transform_test = transforms.Compose([
+    transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
     ])
 
-    test_datasets = datasets.CIFAR10("./datasets", train=False, transform=transform_test)
+    dataset = datasets.CIFAR10("./datasets", train=False, transform=transform)
 
-    # There are some methods that support batch_size is not 1, just set it according to the method, if you don't know, then keep 1
-    dataloader = DataLoader(test_datasets, batch_size=1, shuffle=False, num_workers=4, drop_last=True)
+    # There are some methods that support batch_size is not 1,
+    # just set it according to the method, if you don't know, then keep 1
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=4, drop_last=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -51,46 +52,36 @@ def main():
     # -------------------------------------------
     method = args.method.upper()
     if method == "L-BFGS":
-        # L-BFGS
         attacker = L_BFGS(model=model, criterion=criterion)
         # attacker = L_BFGS(parameter=parameter, criterion=criterion, iters=2, epsilon=0.2)
     elif method == "FGSM":
-        # FGSM
         attacker = FGSM(model=model, criterion=criterion)
         # attacker = FGSM(parameter=parameter, criterion=criterion, epsilon=0.2)
     elif method == "I-FGSM":
-        # I-FGSM
         attacker = I_FGSM(model=model, criterion=criterion)
         # attacker = I_FGSM(parameter=parameter, criterion=criterion)
     elif method == "JSMA":
-        # JSMA
         attacker = JSMA(model=model)
         # attacker = JSMA(parameter=parameter, alpha=6, gamma=6, iters=50)
     elif method == "ONE-PIXEL":
-        # ONE-PIXEL
         attacker = ONE_PIXEL(model=model)
         # attacker = ONE_PIXEL(parameter=parameter)
     elif method == "C&W":
-        # C&W
         attacker = CW(model=model, criterion=criterion)
         # attacker = CW(parameter=parameter, criterion=criterion, iters=1000)
     elif method == "DEEPFOOL":
-        # DEEPFOOL
         attacker = DeepFool(model=model)
         # attacker = DeepFool(parameter=parameter, overshoot=2, iters=100)
     elif method == "MI-FGSM":
-        # MI-FGSM
         attacker = MI_FGSM(model=model, criterion=criterion)
         # attacker = MI_FGSM(parameter=parameter, criterion=criterion)
     elif method == "UPSET":
-        # UPSET
         residual_model = ResidualModel().to(device)
         warnings.warn(f"You Must Load The Parameter of Model: {residual_model.__class__.__name__}")
         # residual_model.load_state_dict(torch.load("./parameter/UPSET/target_0/1.pth"))
         attacker = UPSET(model=residual_model)
     else:
-        print(f"Unknown Method: {method}")
-        return
+        raise ValueError(f"Unknown Method: {method}")
     # -------------------------------------------
     # begin to test
     counter = 0

@@ -4,7 +4,7 @@ import torch
 
 import numpy as np
 
-from .base_model import BaseModel
+from .base import BaseModel
 
 
 class DeepFool(BaseModel):
@@ -26,9 +26,9 @@ class DeepFool(BaseModel):
         self.overshoot = overshoot
         self.iters = iters
 
-    def attack(self, image, target):
+    def attack(self, image, target, is_targeted=False):
         """
-        # DeepFool
+        DeepFool
         Only data with batch_size = 1 will be accepted
         :param image:  Tensors that need to be processed
         :param target: the target is useless, leave it alone (hhhh)
@@ -68,7 +68,8 @@ class DeepFool(BaseModel):
                 grad_orig = x.grad.data.cpu().numpy().copy()
 
                 for k in range(1, num_classes):
-                    # Clear Gradient # Prevent the gradient of other labels from affecting the calculation of the current label gradient
+                    # Clear Gradient
+                    # Prevent the gradient of other labels from affecting the calculation of the current label gradient
                     if x.grad is not None:
                         x.grad.zero_()
                     # Backpropagation for each corresponding label
@@ -86,7 +87,8 @@ class DeepFool(BaseModel):
                         pert = pert_k
                         w = w_k
 
-                # Prevent a pert of 0 # from normalizing the magnitude of the perturbation and keep it in the direction of gradient w
+                # Prevent a pert of 0
+                # from normalizing the magnitude of the perturbation and keep it in the direction of gradient w
                 r_i = (pert + 1e-4) * w / np.linalg.norm(w)
                 r_tot = np.float32(r_tot + r_i)
 

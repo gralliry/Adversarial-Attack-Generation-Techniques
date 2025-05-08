@@ -104,8 +104,7 @@ def main():
         # UPSET
         attacker = UPSET(model=residual_model)
     else:
-        print(f"Unknown Method: {method}")
-        return
+        raise ValueError(f"Unknown Method: {method}")
     # ----------------------------------------------------------
 
     print("The attack model has been created")

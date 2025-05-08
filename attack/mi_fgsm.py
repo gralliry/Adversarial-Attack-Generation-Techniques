@@ -2,7 +2,7 @@
 # @Description:
 import torch
 
-from .base_model import BaseModel
+from .base import BaseModel
 
 
 class MI_FGSM(BaseModel):
@@ -27,7 +27,7 @@ class MI_FGSM(BaseModel):
         self.decay_factor = decay_factor
         self.iters = iters
 
-    def attack(self, image, target):
+    def attack(self, image, target, is_targeted=False):
         """
         MI-FGSM
         :param image:
@@ -54,7 +54,10 @@ class MI_FGSM(BaseModel):
                 # Generate adversarial perturbations # Use momentum to update perturbations # Gradient normalization
                 grad = pert_image.grad
                 grad = self.decay_factor * grad + grad / torch.norm(grad, p=1)
-                pert_image = pert_image + alpha * torch.sign(grad)
+                if is_targeted:
+                    pert_image = pert_image - alpha * torch.sign(grad)
+                else:
+                    pert_image = pert_image + alpha * torch.sign(grad)
                 # Make sure that the perturbed image is still a valid input (within the range of [0, 1])
                 pert_image = torch.clamp(pert_image, 0, 1).detach()
                 # When the maximum perturbation is reached, exit directly

@@ -50,8 +50,6 @@ def main():
     loss_fn = torch.nn.CrossEntropyLoss().to(device)
 
     # Recognition model (original model)
-
-
     model = IndentifyModel()
 
     model = model.to(device)
@@ -63,7 +61,7 @@ def main():
 
     # Optimizer
     """
-    Two optimizers were chosen in terms of the loss function，Adam （Adaptive Moment Estimation）and SGD （Adaptive Moment Estimation）。
+    Two optimizers were chosen in terms of the loss function，Adam and SGD。
     In practice, it was found that SGD stochastic gradient descent was more suitable for the optimization of this experiment.
     """
     # Learning rate

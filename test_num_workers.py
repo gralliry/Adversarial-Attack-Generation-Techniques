@@ -7,7 +7,6 @@ from torch.utils.data import DataLoader
 import torchvision
 from torchvision import transforms
 
-
 if __name__ == "__main__":
     transform = transforms.Compose([
         torchvision.transforms.ToTensor(),
@@ -31,4 +30,4 @@ if __name__ == "__main__":
             for i, data in enumerate(train_loader, 0):
                 pass
         end = time()
-        print("Finish with:{} second, num_workers={}".format(end - start, num_workers))
+        print(f"Finish with:{end - start} second, num_workers={num_workers}")

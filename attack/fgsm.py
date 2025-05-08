@@ -3,7 +3,7 @@
 
 import torch
 
-from .base_model import BaseModel
+from .base import BaseModel
 
 
 class FGSM(BaseModel):
@@ -23,11 +23,12 @@ class FGSM(BaseModel):
         self.criterion = criterion.to(self.device)
         self.epsilon = epsilon
 
-    def attack(self, image, target):
+    def attack(self, image, target, is_targeted=False):
         """
         FGSM
         :param image:  Tensors that need to be processed
-        :param target: Correct tag value
+        :param target: tag value
+        :param is_targeted:
         :return:       Adversarial sample generated
         """
         # Set the requires_grad of the input tensor to True to calculate the gradient
@@ -44,7 +45,12 @@ class FGSM(BaseModel):
             # Backpropagation, calculating the gradient
             loss.backward()
             # Perform a gradient ascent # Perturbation with gradient symbols
-            pert_image = pert_image + self.epsilon * pert_image.grad.sign()
+            if is_targeted:
+                # If it is targeted attack, the gradient is reversed
+                pert_image = pert_image - self.epsilon * pert_image.grad.sign()
+            else:
+                # If it is not targeted attack, the gradient is reversed
+                pert_image = pert_image + self.epsilon * pert_image.grad.sign()
             # Limit the generated adversarial samples to the range of [0, 1].
             pert_image = torch.clamp(pert_image, 0, 1)
 
