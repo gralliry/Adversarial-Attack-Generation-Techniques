@@ -35,6 +35,7 @@ class DeepFool(BaseModel):
         :return:       Adversarial samples generated
         """
         assert image.size(0) == 1, ValueError("Only data with batch_size = 1 will be accepted")
+        assert is_targeted is False, ValueError("DeepFool must be not targeted")
         image = image.clone().detach()
         # pert_image = self.totensor(image)
         x = image.clone().detach().requires_grad_(True)

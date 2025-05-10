@@ -43,8 +43,6 @@ class MI_FGSM(BaseModel):
         self.model.eval()
         with torch.set_grad_enabled(True):
             for _ in range(self.iters):
-                # Set up the gradient
-                pert_image.requires_grad = True
                 # Forward propagation
                 output = self.model(pert_image)
                 self.model.zero_grad()
@@ -59,7 +57,7 @@ class MI_FGSM(BaseModel):
                 else:
                     pert_image = pert_image + alpha * torch.sign(grad)
                 # Make sure that the perturbed image is still a valid input (within the range of [0, 1])
-                pert_image = torch.clamp(pert_image, 0, 1).detach()
+                pert_image = torch.clamp(pert_image, 0, 1).detach().requires_grad_(True)
                 # When the maximum perturbation is reached, exit directly
                 if torch.norm((pert_image - image), p=float('inf')) > self.epsilon:
                     break

@@ -52,7 +52,7 @@ class I_FGSM(BaseModel):
                 else:
                     pert_image = pert_image + alpha * pert_image.grad.sign()
                 # Make sure the perturbed image is still a valid input (in the range of [0, 1])
-                pert_image = torch.clamp(pert_image, 0, 1)
+                pert_image = torch.clamp(pert_image, 0, 1).requires_grad_(True)
                 # When the maximum perturbation is reached, exit directly
                 if torch.norm((pert_image - image), p=float('inf')) > self.epsilon:
                     break

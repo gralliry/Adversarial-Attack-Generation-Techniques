@@ -52,6 +52,6 @@ class FGSM(BaseModel):
                 # If it is not targeted attack, the gradient is reversed
                 pert_image = pert_image + self.epsilon * pert_image.grad.sign()
             # Limit the generated adversarial samples to the range of [0, 1].
-            pert_image = torch.clamp(pert_image, 0, 1)
+            pert_image = torch.clamp(pert_image, 0, 1).requires_grad_(True)
 
         return pert_image

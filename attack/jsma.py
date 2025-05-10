@@ -30,35 +30,36 @@ class JSMA(BaseModel):
         self.gamma = gamma
         self.iters = iters
 
-    def attack(self, image, target, is_targeted=False):
+    def attack(self, image, target, is_targeted=True):
         """
         JSMA
         :param image:
         :param target: Tag of the attack
+        :param is_targeted: is_targeted
         :return:
         """
         assert image.size(0) == 1, ValueError("Only data with batch_size = 1 will be accepted")
+        assert is_targeted is True, ValueError("JSMA must be targeted")
 
         pert_image = image.clone().detach().requires_grad_(True)
         # Generate spoofed labels
         # The number of fool_target elements here should be the same as batch_size
         # Define the search field, set the modified position to zero, and no longer calculate it next time
         mask = np.ones(pert_image.shape)
-        attack_target = target if is_targeted else (target + 1) % 10
         # Evaluation mode
         self.model.eval()
         with torch.set_grad_enabled(True):
             for _ in range(self.iters):
                 output = self.model(pert_image)
                 # This is only appropriate for a judgment where batch_size is 1
-                if output.argmax(1) == attack_target:
+                if output.argmax(1) == target:
                     # If the attack is successful, the iteration is stopped
                     break
                 # Gradient clearing
                 if pert_image.grad is not None:
                     pert_image.grad.zero_()
                 # Backpropagation is performed on each image
-                output[0, attack_target[0]].backward(retain_graph=True)
+                output[0, target[0]].backward(retain_graph=True)
                 # Generate perturbation points and perturbation sizes
                 index, pix_sign = self.saliency_map(pert_image, mask)
                 # Add Perturbation to Adversarial Samples
@@ -75,7 +76,7 @@ class JSMA(BaseModel):
 
     # Calculate saliency plots
     @staticmethod
-    def saliency_map(image, mask):
+    def saliency_map(image, mask: np.ndarray):
         """
         This method is a simplified version of the beta parameter and focuses on the points
         where the attack target contributes the most

@@ -35,7 +35,8 @@ class ONE_PIXEL(BaseModel):
         self.factor = factor
         self.pixels_changed = pixels_changed
 
-    def perturb(self, image, pos, rgb):
+    @staticmethod
+    def perturb(image, pos, rgb):
         pert_image = image.clone().detach().requires_grad_(True)
         # 根据个体生成 新的 对抗样本
         for i in range(3):
@@ -43,7 +44,7 @@ class ONE_PIXEL(BaseModel):
 
         return pert_image
 
-    def evaluate(self, pos_candidates, rgb_candidates, img, label):
+    def evaluate(self, pos_candidates, rgb_candidates, img, label) -> np.ndarray:
         # 所有像素点种群的个体的适应度
         fitness = []
         with torch.no_grad():
@@ -111,9 +112,9 @@ class ONE_PIXEL(BaseModel):
         for _ in range(self.iters):
             # 生成新的候选解
             new_rgb_candidates = self.evolve(rgb_candidates)
-            # 计算新的适应度
+            # 计算 新 的 适应度
             new_fitness = self.evaluate(pos_candidates, new_rgb_candidates, image, target)
-            # 根据是否有目标攻击，选择更高或更低的适应度来更新种群
+            # 根据是否有目标攻击，选择更高或更低 的 适应度来更新种群
             successors = (new_fitness > fitness) if is_targeted else (new_fitness < fitness)
             rgb_candidates[successors] = new_rgb_candidates[successors]
             fitness[successors] = new_fitness[successors]
@@ -133,11 +134,11 @@ class ONE_PIXEL(BaseModel):
             pixels_fitness_arg = np.array([np.argmin(subfitness) for subfitness in fitness])
             pixels_fitness = np.array([np.min(subfitness) for subfitness in fitness])
             indexarr = np.argsort(pixels_fitness)
-        # 根据最好的适应度进行选择并叠加在原样本中生成对抗样本
+        # 根据d最好 的 适应度 进行选择并叠加在原样本中生成对抗样本
         perturb_img = image
         for index in range(min(self.pixels_size, self.pixels_changed)):
-            perturb_img = self.perturb(perturb_img,
-                                       pos_candidates[indexarr[index]],
+            perturb_img = self.perturb(pos_candidates[indexarr[index]],
                                        rgb_candidates[indexarr[index], pixels_fitness_arg[index]],
+                                       perturb_img
                                        )
         return perturb_img
