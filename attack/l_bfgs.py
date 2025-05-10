@@ -7,11 +7,10 @@ from .base import BaseModel
 
 
 class L_BFGS(BaseModel):
-    def __init__(self, model, criterion, epsilon=0.1, alpha=0.1, iters=1, lr=0.001, cuda=True):
+    def __init__(self, model, epsilon=0.1, alpha=0.1, iters=1, lr=0.001, cuda=True):
         """
         L_BFGS
         :param model: 攻击的模型
-        :param criterion: 损失函数
         :param epsilon: 扰动大小
         :param alpha: 权重
         :param iters: 迭代次数
@@ -20,7 +19,7 @@ class L_BFGS(BaseModel):
         """
         super().__init__(model=model, cuda=cuda)
 
-        self.criterion = criterion
+        self.criterion = torch.nn.CrossEntropyLoss().to(self.device)
         self.epsilon = epsilon
         self.alpha = alpha
         self.iters = iters

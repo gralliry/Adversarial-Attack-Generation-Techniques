@@ -7,7 +7,7 @@ from .base import BaseModel
 
 
 class FGSM(BaseModel):
-    def __init__(self, model, criterion, epsilon=0.06, cuda=True):
+    def __init__(self, model, epsilon=0.06, cuda=True):
         """
         FGSM
 
@@ -15,12 +15,11 @@ class FGSM(BaseModel):
 
         https://github.com/Harry24k/FGSM-pytorch/blob/master/FGSM.ipynb
         :param model:
-        :param criterion: Loss function
         :param epsilon:   Amplitude of disturbance
         """
         super().__init__(model=model, cuda=cuda)
 
-        self.criterion = criterion.to(self.device)
+        self.criterion = torch.nn.CrossEntropyLoss().to(self.device)
         self.epsilon = epsilon
 
     def attack(self, image, target, is_targeted=False):

@@ -6,7 +6,7 @@ from .base import BaseModel
 
 
 class MI_FGSM(BaseModel):
-    def __init__(self, model, criterion, epsilon=0.1, decay_factor=0.5, iters=10, cuda=True):
+    def __init__(self, model, epsilon=0.1, decay_factor=0.5, iters=10, cuda=True):
         """
         MI_FGSM
 
@@ -14,7 +14,6 @@ class MI_FGSM(BaseModel):
 
         https://github.com/Jeffkang-94/pytorch-adversarial-attack/blob/master/attack/mifgsm.py
         :param model:
-        :param criterion: 损失函数
         :param epsilon: 扰动
         :param decay_factor: 衰减因子
         :param iters: 迭代次数
@@ -22,7 +21,7 @@ class MI_FGSM(BaseModel):
         """
         super().__init__(model=model, cuda=cuda)
 
-        self.criterion = criterion.to(self.device)
+        self.criterion = torch.nn.CrossEntropyLoss().to(self.device)
         self.epsilon = epsilon
         self.decay_factor = decay_factor
         self.iters = iters

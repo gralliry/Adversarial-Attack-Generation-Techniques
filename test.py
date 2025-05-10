@@ -52,14 +52,14 @@ def main():
     # -------------------------------------------
     method = args.method.upper()
     if method == "L-BFGS":
-        attacker = L_BFGS(model=model, criterion=criterion)
-        # attacker = L_BFGS(parameter=parameter, criterion=criterion, iters=2, epsilon=0.2)
+        attacker = L_BFGS(model=model)
+        # attacker = L_BFGS(parameter=parameter, iters=2, epsilon=0.2)
     elif method == "FGSM":
-        attacker = FGSM(model=model, criterion=criterion)
-        # attacker = FGSM(parameter=parameter, criterion=criterion, epsilon=0.2)
+        attacker = FGSM(model=model)
+        # attacker = FGSM(parameter=parameter, epsilon=0.2)
     elif method == "I-FGSM":
-        attacker = I_FGSM(model=model, criterion=criterion)
-        # attacker = I_FGSM(parameter=parameter, criterion=criterion)
+        attacker = I_FGSM(model=model)
+        # attacker = I_FGSM(parameter=parameter)
     elif method == "JSMA":
         attacker = JSMA(model=model)
         # attacker = JSMA(parameter=parameter, alpha=6, gamma=6, iters=50)
@@ -67,14 +67,14 @@ def main():
         attacker = ONE_PIXEL(model=model)
         # attacker = ONE_PIXEL(parameter=parameter)
     elif method == "C&W":
-        attacker = CW(model=model, criterion=criterion)
-        # attacker = CW(parameter=parameter, criterion=criterion, iters=1000)
+        attacker = CW(model=model)
+        # attacker = CW(parameter=parameter, iters=1000)
     elif method == "DEEPFOOL":
         attacker = DeepFool(model=model)
         # attacker = DeepFool(parameter=parameter, overshoot=2, iters=100)
     elif method == "MI-FGSM":
-        attacker = MI_FGSM(model=model, criterion=criterion)
-        # attacker = MI_FGSM(parameter=parameter, criterion=criterion)
+        attacker = MI_FGSM(model=model)
+        # attacker = MI_FGSM(parameter=parameter)
     elif method == "UPSET":
         residual_model = ResidualModel().to(device)
         warnings.warn(f"You Must Load The Parameter of Model: {residual_model.__class__.__name__}")

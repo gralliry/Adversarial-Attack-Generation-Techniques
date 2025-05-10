@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Description:
 import torch
-from torch.utils.data.dataloader import DataLoader
 import torchvision
 import matplotlib.pyplot as plt
 import warnings
@@ -60,8 +59,6 @@ def main():
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    criterion = torch.nn.CrossEntropyLoss().to(device)
-
     # Here, you can load the trained model parameter file
     model = IndentifyModel().to(device)
     model.load_state_dict(torch.load("./parameter/ResNet/100.pth"))
@@ -71,13 +68,13 @@ def main():
     method = args.method.upper()
     if method == "L-BFGS":
         # L-BFGS
-        attacker = L_BFGS(model=model, criterion=criterion)
+        attacker = L_BFGS(model=model)
     elif method == "FGSM":
         # FGSM
-        attacker = FGSM(model=model, criterion=criterion)
+        attacker = FGSM(model=model)
     elif method == "I-FGSM":
         # I-FGSM
-        attacker = I_FGSM(model=model, criterion=criterion, epsilon=1)
+        attacker = I_FGSM(model=model, epsilon=1)
     elif method == "JSMA":
         # JSMA
         attacker = JSMA(model=model)
@@ -87,14 +84,14 @@ def main():
         attacker = ONE_PIXEL(model=model, pixels_changed=10)
     elif method == "C&W":
         # C&W
-        attacker = CW(model=model, criterion=criterion)
+        attacker = CW(model=model)
     elif method == "DEEPFOOL":
         # DEEPFOOL
         # attacker = DeepFool(parameter=parameter)
         attacker = DeepFool(model=model, overshoot=2, iters=100)
     elif method == "MI-FGSM":
         # MI-FGSM
-        attacker = MI_FGSM(model=model, criterion=criterion)
+        attacker = MI_FGSM(model=model)
     elif method == "UPSET":
         # Disturbance generation model
         # If this attack method is not chosen, it can be ignored

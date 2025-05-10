@@ -7,20 +7,19 @@ from .base import BaseModel
 
 
 class I_FGSM(BaseModel):
-    def __init__(self, model, criterion, epsilon=0.2, iters=15, cuda=True):
+    def __init__(self, model, epsilon=0.2, iters=15, cuda=True):
         """
         I-FGSM
 
         https://github.com/1Konny/FGSM?tab=readme-ov-file
         :param model:
-        :param criterion: Loss function
         :param epsilon:   Disturbance amplitude (maximum disturbance limit)
         :param iters:     The number of iterations
         :param cuda:      Whether to start CUDA
         """
         super().__init__(model=model, cuda=cuda)
 
-        self.criterion = criterion.to(self.device)
+        self.criterion = torch.nn.CrossEntropyLoss().to(self.device)
         self.epsilon = epsilon
         self.iters = iters
 
