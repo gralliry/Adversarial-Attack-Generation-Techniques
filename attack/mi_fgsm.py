@@ -6,7 +6,7 @@ from .base import BaseModel
 
 
 class MI_FGSM(BaseModel):
-    def __init__(self, model, epsilon=0.1, decay_factor=0.5, iters=10, cuda=True):
+    def __init__(self, model, epsilon=0.1, alpha=0.01, decay=0.5, iters=10, cuda=True):
         """
         MI_FGSM
 
@@ -15,7 +15,7 @@ class MI_FGSM(BaseModel):
         https://github.com/Jeffkang-94/pytorch-adversarial-attack/blob/master/attack/mifgsm.py
         :param model:
         :param epsilon: 扰动
-        :param decay_factor: 衰减因子
+        :param decay: 衰减因子
         :param iters: 迭代次数
         :param cuda: 是否启动cuda
         """
@@ -23,7 +23,8 @@ class MI_FGSM(BaseModel):
 
         self.criterion = torch.nn.CrossEntropyLoss().to(self.device)
         self.epsilon = epsilon
-        self.decay_factor = decay_factor
+        self.alpha = alpha
+        self.decay = decay
         self.iters = iters
 
     def attack(self, image, target, is_targeted=False):
@@ -31,34 +32,32 @@ class MI_FGSM(BaseModel):
         MI-FGSM
         :param image:
         :param target: 正确标签
+        :param is_targeted:
         :return:       生成的对抗样本
         """
         pert_image = image.clone().detach().requires_grad_(True)
         # Generate spoofed labels
         # For example, the target index is generated here, which is the label index of plane
         # attack_target = [(i + 1) % 10 for i in target]
-
+        momentum = torch.zeros_like(pert_image).requires_grad_(True)
         alpha = self.epsilon / self.iters
         self.model.eval()
-        with torch.set_grad_enabled(True):
+        with torch.enable_grad():
             for _ in range(self.iters):
                 # Forward propagation
                 output = self.model(pert_image)
-                self.model.zero_grad()
                 # Calculate the loss
-                loss = self.criterion(output, target)
+                if is_targeted:
+                    loss = -self.criterion(output, target)
+                else:
+                    loss = self.criterion(output, target)
                 loss.backward()
                 # Generate adversarial perturbations # Use momentum to update perturbations # Gradient normalization
                 grad = pert_image.grad
-                grad = self.decay_factor * grad + grad / torch.norm(grad, p=1)
-                if is_targeted:
-                    pert_image = pert_image - alpha * torch.sign(grad)
-                else:
-                    pert_image = pert_image + alpha * torch.sign(grad)
+                grad = grad / torch.mean(torch.abs(grad), dim=(1, 2, 3), keepdim=True)
+                momentum = self.decay * momentum + grad
                 # Make sure that the perturbed image is still a valid input (within the range of [0, 1])
-                pert_image = torch.clamp(pert_image, 0, 1).detach().requires_grad_(True)
-                # When the maximum perturbation is reached, exit directly
-                if torch.norm((pert_image - image), p=float('inf')) > self.epsilon:
-                    break
+                pert_image = torch.clamp(pert_image + self.alpha * grad.sign(), 0, 1)
+                pert_image.grad.zero_()
 
-        return pert_image
+        return pert_image.detach()

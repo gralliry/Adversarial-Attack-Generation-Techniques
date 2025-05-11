@@ -6,7 +6,6 @@ import warnings
 from tqdm import tqdm
 
 import torch
-from torch import nn
 from torch.utils.data.dataloader import DataLoader
 from torchvision import transforms, datasets
 
@@ -37,8 +36,6 @@ def main():
     dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=4, drop_last=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    criterion = nn.CrossEntropyLoss().to(device)
 
     model = IndentifyModel().to(device)
     # -------------------------------------------

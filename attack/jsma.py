@@ -46,22 +46,18 @@ class JSMA(BaseModel):
         # The number of fool_target elements here should be the same as batch_size
         # Define the search field, set the modified position to zero, and no longer calculate it next time
         mask = np.ones(pert_image.shape)
-        # Evaluation mode
         self.model.eval()
-        with torch.set_grad_enabled(True):
+        with torch.enable_grad():
             for _ in range(self.iters):
                 output = self.model(pert_image)
                 # This is only appropriate for a judgment where batch_size is 1
                 if output.argmax(1) == target:
                     # If the attack is successful, the iteration is stopped
                     break
-                # Gradient clearing
-                if pert_image.grad is not None:
-                    pert_image.grad.zero_()
                 # Backpropagation is performed on each image
                 output[0, target[0]].backward(retain_graph=True)
                 # Generate perturbation points and perturbation sizes
-                index, pix_sign = self.saliency_map(pert_image, mask)
+                index, pix_sign = self.saliency_map(pert_image.grad.data.cpu().numpy().copy(), mask)
                 # Add Perturbation to Adversarial Samples
                 pert_image.data[index] += pix_sign * self.alpha * self.gamma
                 # Points that have reached the limit no longer participate in the update
@@ -71,20 +67,21 @@ class JSMA(BaseModel):
                     # The pixel corresponding to the search field is zeroed,
                     # indicating that the point is no longer involved in the calculation update
                     mask[index] = 0
+                # Gradient clearing
+                pert_image.grad.zero_()
 
-        return pert_image
+        return pert_image.detach()
 
     # Calculate saliency plots
     @staticmethod
-    def saliency_map(image, mask: np.ndarray):
+    def saliency_map(derivative: np.ndarray, mask: np.ndarray):
         """
         This method is a simplified version of the beta parameter and focuses on the points
         where the attack target contributes the most
-        :param image:
+        :param derivative:
         :param mask: Marker bits, which record the coordinates of the points that have been visited
         :return:
         """
-        derivative = image.grad.data.cpu().numpy().copy()
         # Prediction Contribution to Attack Target # is set to 0 for searched points
         alphas = derivative * mask
         # Predict the contribution to non-attack targets

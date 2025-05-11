@@ -29,14 +29,15 @@ class ResidualModel(nn.Module):
 
 
 class UPSET(BaseModel):
-    def __init__(self, model: ResidualModel, cuda=True):
+    def __init__(self, model: ResidualModel, cuda=True, s=0.1):
         """
         UPSET
         https://arxiv.org/abs/1707.01159
-        :param model: Perturbation generation model! Attention: Perturbation generating model, not an identification model
+        :param model: Perturbation generation model. Perturbation generating model, not an identification model
         :param cuda:  Whether to use CUDA
         """
         super().__init__(model=model, cuda=cuda)
+        self.s = s
 
     def attack(self, image, target, is_targeted=False):
         """
@@ -44,10 +45,10 @@ class UPSET(BaseModel):
         :param target: useless, leave it alone
         :param is_targeted: useless, leave it alone
         """
-        pert_image = image.clone().detach().requires_grad_(True)
+        image = image.clone().detach().requires_grad_(True)
         # Superimpose perturbations to the original sample
         # Output perturbations
-        pert_image = pert_image + self.model(pert_image)
+        pert_image = image + self.s * self.model(image)
         # Limitations
         pert_image = torch.clamp(pert_image, 0, 1)
         return pert_image

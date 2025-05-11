@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
 # @Description: This is used to train the disturbance generation model required by the UPSET method
+import argparse
 import os.path
 import warnings
 
 import torch
-from torch import nn
 from torch.utils.data.dataloader import DataLoader
 from torchvision import transforms
 from torchvision.datasets import CIFAR10
-import argparse
 
 import attack
-
 from models import IndentifyModel
 
 parser = argparse.ArgumentParser()
@@ -27,7 +25,6 @@ def main():
     attack_target = args.target
 
     transform_train = transforms.Compose([
-        transforms.RandomCrop(32, padding=4),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
@@ -57,8 +54,6 @@ def main():
     # -------------------Load the UPSET interference model here-------------------
     residual_model = attack.ResidualModel().to(device)
 
-    loss_fn = nn.CrossEntropyLoss().to(device)
-
     learning_rate = args.learning_rate
     optimizer = torch.optim.SGD(residual_model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
 
@@ -73,16 +68,22 @@ def main():
     total_num = 0
     pardir = f"./parameter/UPSET/target_{attack_target}"
     os.makedirs(pardir, exist_ok=True)
-    for epoch in range(1, args.epoch+1):
+    #
+    s = 0.1
+    w = 1
+    #
+    for epoch in range(1, args.epoch + 1):
         print(f"Epoch {epoch} start")
         residual_model.train()
-        for images, targets in train_dataloader:
-            images, targets = images.to(device), targets.to(device)
+        for images, _ in train_dataloader:
+            images = images.to(device)
 
-            attack_images = residual_model(images) + images
+            attack_images = s * residual_model(images) + images
+            attack_images = torch.clamp(attack_images, 0, 1)
             attack_output = right_model(attack_images)
 
-            loss = loss_fn(attack_output, attack_targets)
+            loss = torch.nn.functional.cross_entropy(attack_output, attack_target, reduction='mean')
+            loss += w * torch.nn.functional.l1_loss(attack_images, images)
 
             optimizer.zero_grad()
             loss.backward()

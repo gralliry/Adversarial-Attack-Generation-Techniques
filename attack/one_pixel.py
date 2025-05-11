@@ -75,10 +75,9 @@ class ONE_PIXEL(BaseModel):
         :param rgb_candidates:
         :return:
         """
-        gen = rgb_candidates.copy()
+        rgb_candidates = rgb_candidates.copy()
         # 遍历每个像素的种群
         for index, pixel_candidates in enumerate(rgb_candidates):
-            pixel_candidates = pixel_candidates.copy()
             # 遍历每个种群的个体/候选解 # 对每个候选解进行演化
             for i in range(self.pop_size):
                 # 从当前候选解中随机选择3个不同的解
@@ -89,13 +88,11 @@ class ONE_PIXEL(BaseModel):
                 choose = np.random.choice((True, False), size=3, p=(self.cr, 1 - self.cr))
                 next_rgb[choose] = pixel_candidates[i][choose]
                 # 处理越界值
-                x_oob = np.logical_or((next_rgb < 0), (1 < next_rgb))
-                # 将越界的值替换为新的随机值
-                next_rgb[x_oob] = np.random.random(3)[x_oob]
+                next_rgb = np.clip(next_rgb, min=0, max=1)
                 # 将生成的新解放入下一代中
                 pixel_candidates[i] = next_rgb
-            gen[index] = pixel_candidates
-        return gen
+            rgb_candidates[index] = pixel_candidates
+        return rgb_candidates
 
     def attack(self, image, target, is_targeted=False):
         assert image.size(0) == 1, ValueError("只接受 batch_size = 1 的数据")

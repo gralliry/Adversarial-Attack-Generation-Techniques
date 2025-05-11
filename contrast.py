@@ -33,7 +33,6 @@ def show(images, texts, is_show=False, is_save=True, save_path="./output.png"):
     for i, image in enumerate(images):
         # Convert tensors to NumPy arrays
         numpy_image = torch.clamp(image, 0, 1).detach().squeeze(dim=0).permute(1, 2, 0).cpu().numpy()
-
         # Show the images
         axes[i].imshow(numpy_image)
         axes[i].set_title(texts[i])

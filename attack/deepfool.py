@@ -31,17 +31,16 @@ class DeepFool(BaseModel):
         DeepFool
         Only data with batch_size = 1 will be accepted
         :param image:  Tensors that need to be processed
-        :param target: the target is useless, leave it alone (hhhh)
+        :param target: the target is useless, leave it alone
+        :param is_targeted: the is_targeted is useless, leave it alone
         :return:       Adversarial samples generated
         """
         assert image.size(0) == 1, ValueError("Only data with batch_size = 1 will be accepted")
         assert is_targeted is False, ValueError("DeepFool must be not targeted")
-        image = image.clone().detach()
         # pert_image = self.totensor(image)
         x = image.clone().detach().requires_grad_(True)
         # Get the right predicted output
         f_image = self.model(image)
-        fs = self.model(x)
         # Get the number of categories/tags
         num_classes = f_image.size(1)
         # Get index sorting for the correctness of all labels
@@ -49,14 +48,16 @@ class DeepFool(BaseModel):
         i_classes = i_classes[0:num_classes]
         # The prediction label of the current model output
         label = i_classes[0]
-        k_i = label
         # The gradient gap from the current label to the correct label
-        w = np.zeros(image.shape)
-        r_tot = np.zeros(image.shape)
+        w = np.zeros_like(image)
+        r_tot = np.zeros_like(image)
 
         self.model.eval()
-        with torch.set_grad_enabled(True):
+        with torch.enable_grad():
             for _ in range(self.iters):
+                # Gets the label of the image after adding the perturbation
+                fs = self.model(x)
+                k_i = np.argmax(fs.data.cpu().numpy().flatten())
                 # If the label is still the correct label after the prediction
                 if k_i != label:
                     # Successfully generate adversarial samples and exit directly
@@ -69,10 +70,6 @@ class DeepFool(BaseModel):
                 grad_orig = x.grad.data.cpu().numpy().copy()
 
                 for k in range(1, num_classes):
-                    # Clear Gradient
-                    # Prevent the gradient of other labels from affecting the calculation of the current label gradient
-                    if x.grad is not None:
-                        x.grad.zero_()
                     # Backpropagation for each corresponding label
                     fs[0, i_classes[k]].backward(retain_graph=True)
                     # The gradient of the current label
@@ -87,6 +84,10 @@ class DeepFool(BaseModel):
                     if pert_k > pert:
                         pert = pert_k
                         w = w_k
+                    # Clear Gradient
+                    # Prevent the gradient of other labels from affecting the calculation of the current label gradient
+                    if x.grad is not None:
+                        x.grad.zero_()
 
                 # Prevent a pert of 0
                 # from normalizing the magnitude of the perturbation and keep it in the direction of gradient w
@@ -95,10 +96,6 @@ class DeepFool(BaseModel):
 
                 # Add perturbations to the original image to generate adversarial samples
                 x = image + (1 + self.overshoot) * torch.from_numpy(r_tot).to(self.device)
-                x.requires_grad = True
+                x.grad.zero_()
 
-                # Gets the label of the image after adding the perturbation
-                fs = self.model(x)
-                k_i = np.argmax(fs.data.cpu().numpy().flatten())
-
-        return x
+        return x.detach()

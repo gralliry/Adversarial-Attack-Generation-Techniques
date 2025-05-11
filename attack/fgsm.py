@@ -7,7 +7,7 @@ from .base import BaseModel
 
 
 class FGSM(BaseModel):
-    def __init__(self, model, epsilon=0.06, cuda=True):
+    def __init__(self, model, epsilon=0.06, alpha=0.06, cuda=True):
         """
         FGSM
 
@@ -20,6 +20,7 @@ class FGSM(BaseModel):
         super().__init__(model=model, cuda=cuda)
 
         self.criterion = torch.nn.CrossEntropyLoss().to(self.device)
+        self.alpha = alpha
         self.epsilon = epsilon
 
     def attack(self, image, target, is_targeted=False):
@@ -34,23 +35,20 @@ class FGSM(BaseModel):
         pert_image = image.clone().detach().requires_grad_(True)
         # The evaluation mode is set, but the gradient is calculated normally
         self.model.eval()
-        with torch.set_grad_enabled(True):
+        with torch.enable_grad():
             # Use the model for forward propagation
             output = self.model(pert_image)
-            # Zeroing the gradient of the model parameters
-            self.model.zero_grad()
             # Calculate the loss function
-            loss = self.criterion(output, target)
+            if is_targeted:
+                loss = -self.criterion(output, target)
+            else:
+                loss = self.criterion(output, target)
             # Backpropagation, calculating the gradient
             loss.backward()
             # Perform a gradient ascent # Perturbation with gradient symbols
-            if is_targeted:
-                # If it is targeted attack, the gradient is reversed
-                pert_image = pert_image - self.epsilon * pert_image.grad.sign()
-            else:
-                # If it is not targeted attack, the gradient is reversed
-                pert_image = pert_image + self.epsilon * pert_image.grad.sign()
+            delta = torch.clamp(self.alpha * pert_image.grad.sign(), min=-self.epsilon, max=self.epsilon)
             # Limit the generated adversarial samples to the range of [0, 1].
-            pert_image = torch.clamp(pert_image, 0, 1).requires_grad_(True)
+            pert_image = torch.clamp(pert_image + delta, 0, 1)
+            pert_image.grad.zero_()
 
-        return pert_image
+        return pert_image.detach()

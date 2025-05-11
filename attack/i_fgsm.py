@@ -7,7 +7,7 @@ from .base import BaseModel
 
 
 class I_FGSM(BaseModel):
-    def __init__(self, model, epsilon=0.2, iters=15, cuda=True):
+    def __init__(self, model, epsilon=0.2, alpha=0.01, iters=15, cuda=True):
         """
         I-FGSM
 
@@ -21,6 +21,7 @@ class I_FGSM(BaseModel):
 
         self.criterion = torch.nn.CrossEntropyLoss().to(self.device)
         self.epsilon = epsilon
+        self.alpha = alpha
         self.iters = iters
 
     def attack(self, image, target, is_targeted=False):
@@ -32,28 +33,24 @@ class I_FGSM(BaseModel):
         :return:       Adversarial sample generated
         """
         pert_image = image.clone().detach().requires_grad_(True)
-        # Iteration step size
-        alpha = self.epsilon / self.iters
 
         self.model.eval()
-        with torch.set_grad_enabled(True):
+        with torch.enable_grad():
             # Iterate
             for _ in range(self.iters):
                 # Forward propagation
                 outputs = self.model(pert_image)
-                self.model.zero_grad()
                 # Calculate the loss
-                loss = self.criterion(outputs, target)
+                if is_targeted:
+                    loss = -self.criterion(outputs, target)
+                else:
+                    loss = self.criterion(outputs, target)
                 loss.backward()
                 # Gradient Rise # Utilize gradient symbols to perturb while limiting the size of the perturbation
-                if is_targeted:
-                    pert_image = pert_image - alpha * pert_image.grad.sign()
-                else:
-                    pert_image = pert_image + alpha * pert_image.grad.sign()
+                delta = torch.clamp(self.alpha * pert_image.grad.sign(), min=-self.epsilon, max=self.epsilon)
+                pert_image = pert_image + delta
                 # Make sure the perturbed image is still a valid input (in the range of [0, 1])
-                pert_image = torch.clamp(pert_image, 0, 1).requires_grad_(True)
-                # When the maximum perturbation is reached, exit directly
-                if torch.norm((pert_image - image), p=float('inf')) > self.epsilon:
-                    break
+                pert_image = torch.clamp(pert_image, 0, 1)
+                pert_image.grad.zero_()
 
-        return pert_image
+        return pert_image.detach()
