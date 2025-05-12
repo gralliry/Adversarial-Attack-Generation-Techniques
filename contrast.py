@@ -49,12 +49,12 @@ def show(images, texts, is_show=False, is_save=True, save_path="./output.png"):
 def main():
     transform = torchvision.transforms.Compose([
         torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ])
 
-    datasets = torchvision.datasets.CIFAR10("./datasets", train=False, transform=transform)
+    dataset = torchvision.datasets.CIFAR10("./datasets", train=False, transform=transform)
 
-    dataloader = torch.utils.data.dataloader.DataLoader(datasets, batch_size=1, shuffle=True, num_workers=0)
+    dataloader = torch.utils.data.dataloader.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=0)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

@@ -17,6 +17,7 @@ from models import IndentifyModel
 parser = argparse.ArgumentParser()
 
 parser.add_argument("-e", "--epoch", default=100, type=int, help="Training times")
+parser.add_argument("-b", "--batch_size", default=100, type=int, help="Batch size")
 
 args = parser.parse_args()
 
@@ -25,12 +26,12 @@ def main():
     transform_train = transforms.Compose([
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ])
 
     transform_test = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ])
     # DataSet
     train_datasets = CIFAR10("./datasets", train=True, transform=transform_train)
@@ -38,8 +39,8 @@ def main():
     test_datasets = CIFAR10("./datasets", train=False, transform=transform_test)
 
     # DataLoader
-    train_dataloader = DataLoader(train_datasets, batch_size=1024, shuffle=True, num_workers=4)
-    test_dataloader = DataLoader(test_datasets, batch_size=1024, shuffle=False, num_workers=0)
+    train_dataloader = DataLoader(train_datasets, batch_size=args.batch_size, shuffle=True, num_workers=4)
+    test_dataloader = DataLoader(test_datasets, batch_size=args.batch_size // 4, shuffle=False, num_workers=0)
 
     # Device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -78,6 +79,7 @@ def main():
         model.train()
         train_num = 0
         train_loss = 0
+        train_accuracy = 0
         for imgs, targets in tqdm(train_dataloader, desc=f"Train:{epoch}/{args.epoch}"):
             imgs, targets = imgs.to(device), targets.to(device)
             output = model(imgs)
@@ -90,6 +92,7 @@ def main():
 
             train_num += train_dataloader.batch_size
             train_loss += loss.item()
+            train_accuracy += (output.argmax(1) == targets).sum()
 
         # test
         model.eval()
@@ -110,13 +113,15 @@ def main():
         # Record the accuracy and loss of the total training step
         print(f"train loss: {train_loss / train_num}")
         writer.add_scalar("train_loss", train_loss / train_num, epoch)
+        print(f"train accuracy: {train_accuracy / train_num}")
+        writer.add_scalar("test_accuracy", test_accuracy / test_num, epoch)
         print(f"test loss: {test_loss / test_num}")
         writer.add_scalar("test_loss", test_loss / test_num, epoch)
         print(f"test accuracy: {test_accuracy / test_num}")
         writer.add_scalar("test_accuracy", test_accuracy / test_num, epoch)
 
         # Save the training parameter file
-        torch.save(model.state_dict(), f"./parameter/{model_name}/{epoch}.pth")
+        torch.save(model.state_dict(), f"./parameter/{model_name}/{test_accuracy / test_num:.7f}-{epoch}.pth")
 
         # Adjust the learning rate
         scheduler.step()
