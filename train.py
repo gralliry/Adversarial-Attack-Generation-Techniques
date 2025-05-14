@@ -16,22 +16,25 @@ from models import IndentifyModel
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("-e", "--epoch", default=100, type=int, help="Training times")
-parser.add_argument("-b", "--batch_size", default=100, type=int, help="Batch size")
+parser.add_argument("-e", "--epoch", default=200, type=int, help="Training times")
+parser.add_argument("-b", "--batch_size", default=1024, type=int, help="Batch size")
+parser.add_argument("-n", "--name", default="model", type=str, help="Name of model")
+parser.add_argument("-p", "--path", default="", type=str, help="Path of model")
+parser.add_argument("-lr", "--learning_rate", default=0.10, type=float, help="Learning rate")
 
 args = parser.parse_args()
 
 
 def main():
     transform_train = transforms.Compose([
-        transforms.RandomHorizontalFlip(),
+        transforms.RandomCrop(32, padding=4),  # 随机裁剪+填充
+        transforms.RandomHorizontalFlip(),  # 水平翻转
+        transforms.ColorJitter(brightness=0.2, contrast=0.2),  # 颜色抖动
         transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ])
 
     transform_test = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ])
     # DataSet
     train_datasets = CIFAR10("./datasets", train=True, transform=transform_train)
@@ -39,11 +42,11 @@ def main():
     test_datasets = CIFAR10("./datasets", train=False, transform=transform_test)
 
     # DataLoader
-    train_dataloader = DataLoader(train_datasets, batch_size=args.batch_size, shuffle=True, num_workers=4)
-    test_dataloader = DataLoader(test_datasets, batch_size=args.batch_size // 4, shuffle=False, num_workers=0)
+    train_dataloader = DataLoader(train_datasets, batch_size=args.batch_size, shuffle=True, num_workers=14)
+    test_dataloader = DataLoader(test_datasets, batch_size=args.batch_size, shuffle=False, num_workers=14)
 
     # Device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Using device:", device)
 
     # Loss function
@@ -51,29 +54,27 @@ def main():
 
     # Recognition model (original model)
     model = IndentifyModel()
-
     model = model.to(device)
 
-    # Here you can load the already trained model parameter file to continue training
-    # model.load_state_dict(torch.load("./parameter/ResNet/train_100_0.9126999974250793.pth", map_location=device))
+    if args.path != "":
+        # Here you can load the already trained model parameter file to continue training
+        model.load_state_dict(torch.load(args.load, map_location=device, weights_only=True))
 
-    model_name = model.__class__.__name__
+    name = args.name
 
     # Optimizer
     """
     Two optimizers were chosen in terms of the loss function，Adam and SGD。
-    In practice, it was found that SGD stochastic gradient descent was more suitable for the optimization of this experiment.
+    In practice, it was found that SGD stochastic gradient descent was more suitable.
     """
-    # Learning rate
-    learning_rate = 1e-3
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
-    # Use Cosine Annealing to adjust the learning rate
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
+    # Optimizer Scheduler
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.learning_rate, momentum=0.9, weight_decay=5e-4)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epoch)
 
-    os.makedirs(f"./tensorboard/{model_name}", exist_ok=True)
-    os.makedirs(f"./parameter/{model_name}", exist_ok=True)
+    os.makedirs(f"./tensorboard/{name}", exist_ok=True)
+    os.makedirs(f"./parameter/{name}", exist_ok=True)
     # Recorder
-    writer = SummaryWriter(f"./tensorboard/{model_name}")
+    writer = SummaryWriter(f"./tensorboard/{name}")
     # Number of training rounds
     for epoch in range(1, args.epoch + 1):
         model.train()
@@ -81,47 +82,48 @@ def main():
         train_loss = 0
         train_accuracy = 0
         for imgs, targets in tqdm(train_dataloader, desc=f"Train:{epoch}/{args.epoch}"):
+            # print(torch.min(imgs), torch.max(imgs))
             imgs, targets = imgs.to(device), targets.to(device)
-            output = model(imgs)
+            optimizer.zero_grad()
 
+            output = model(imgs)
             loss = loss_fn(output, targets)
 
-            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            train_num += train_dataloader.batch_size
+            train_num += imgs.size(0)
             train_loss += loss.item()
-            train_accuracy += (output.argmax(1) == targets).sum()
+            train_accuracy += targets.eq(output.argmax(dim=1)).sum().item()
 
         # test
         model.eval()
         test_num = 0
         test_loss = 0
         test_accuracy = 0
-        for imgs, targets in tqdm(test_dataloader, desc=f"Eval:{epoch}/{args.epoch}"):
+        for imgs, targets in tqdm(test_dataloader, desc=f"Eval :{epoch}/{args.epoch}"):
             imgs, targets = imgs.to(device), targets.to(device)
 
             output = model(imgs)
 
             loss = loss_fn(output, targets)
 
-            test_num += test_dataloader.batch_size
+            test_num += imgs.size(0)
             test_loss += loss.item()
-            test_accuracy += (output.argmax(1) == targets).sum()
+            test_accuracy += targets.eq(output.argmax(dim=1)).sum().item()
 
         # Record the accuracy and loss of the total training step
-        print(f"train loss: {train_loss / train_num}")
+        print(f"Train Loss    : {train_loss / train_num}")
         writer.add_scalar("train_loss", train_loss / train_num, epoch)
-        print(f"train accuracy: {train_accuracy / train_num}")
+        print(f"Train Accuracy: {train_accuracy / train_num}")
         writer.add_scalar("test_accuracy", test_accuracy / test_num, epoch)
-        print(f"test loss: {test_loss / test_num}")
+        print(f"Test  Loss    : {test_loss / test_num}")
         writer.add_scalar("test_loss", test_loss / test_num, epoch)
-        print(f"test accuracy: {test_accuracy / test_num}")
+        print(f"Test  Accuracy: {test_accuracy / test_num}")
         writer.add_scalar("test_accuracy", test_accuracy / test_num, epoch)
 
         # Save the training parameter file
-        torch.save(model.state_dict(), f"./parameter/{model_name}/{test_accuracy / test_num:.7f}-{epoch}.pth")
+        torch.save(model.state_dict(), f"./parameter/{name}/{test_accuracy / test_num:.7f}-{epoch}.pth")
 
         # Adjust the learning rate
         scheduler.step()

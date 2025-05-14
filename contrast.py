@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Description:
+import os
+
 import torch
 import torchvision
 import matplotlib.pyplot as plt
@@ -7,6 +9,7 @@ import warnings
 
 import argparse
 
+from torchvision import transforms
 # Identify model
 from models import IndentifyModel
 # Adversarial model
@@ -15,15 +18,19 @@ from attack import FGSM, I_FGSM, MI_FGSM, L_BFGS, DeepFool, CW, JSMA, ONE_PIXEL,
 parser = argparse.ArgumentParser()
 parser.add_argument('-m', '--method',
                     required=True,
-                    choices=['L-BFGS', 'FGSM', 'I-FGSM', 'JSMA', 'ONE-PIXEL', 'C&W', 'DEEPFOOL', 'MI-FGSM', 'UPSET'],
-                    help="Test method: L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, C&W, DEEPFOOL, MI-FGSM, UPSET")
+                    choices=['L-BFGS', 'FGSM', 'I-FGSM', 'JSMA', 'ONE-PIXEL', 'CW', 'DEEPFOOL', 'MI-FGSM', 'UPSET'],
+                    help="Test method: L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, CW, DEEPFOOL, MI-FGSM, UPSET")
+parser.add_argument('-p', '--path', required=True, help="The path of the model parameter file")
+parser.add_argument('-t', '--target', type=int, default=-1, help="The target of attacking if it is targeted")
 
 args = parser.parse_args()
 
 warnings.filterwarnings("ignore", category=UserWarning, module="matplotlib")
 
-classes = ('plane', 'automobile', 'bird', 'cat', 'deer',
-           'dog', 'frog', 'horse', 'ship', 'truck')
+classes = ('plane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+
+
+# python contrast.py -p parameter/ResNet18/0.pth -m FGSM
 
 
 def show(images, texts, is_show=False, is_save=True, save_path="./output.png"):
@@ -31,10 +38,8 @@ def show(images, texts, is_show=False, is_save=True, save_path="./output.png"):
     fig, axes = plt.subplots(1, len(images))
 
     for i, image in enumerate(images):
-        # Convert tensors to NumPy arrays
-        numpy_image = torch.clamp(image, 0, 1).detach().squeeze(dim=0).permute(1, 2, 0).cpu().numpy()
         # Show the images
-        axes[i].imshow(numpy_image)
+        axes[i].imshow(image)
         axes[i].set_title(texts[i])
 
     # Adjust the layout to avoid overlapping
@@ -44,12 +49,12 @@ def show(images, texts, is_show=False, is_save=True, save_path="./output.png"):
     # Show the images
     if is_show:
         plt.show()
+    plt.close()
 
 
 def main():
     transform = torchvision.transforms.Compose([
-        torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        transforms.ToTensor(),
     ])
 
     dataset = torchvision.datasets.CIFAR10("./datasets", train=False, transform=transform)
@@ -60,49 +65,38 @@ def main():
 
     # Here, you can load the trained model parameter file
     model = IndentifyModel().to(device)
-    model.load_state_dict(torch.load("./parameter/ResNet/100.pth"))
+    model.load_state_dict(torch.load(args.path, map_location=device, weights_only=True))
 
     print("The pre-training model is loaded")
     # ----------------------------------------------------------
     method = args.method.upper()
     if method == "L-BFGS":
-        # L-BFGS
-        attacker = L_BFGS(model=model)
+        attacker = L_BFGS(model=model, epsilon=0.01, alpha=0.1, iters=10, lr=0.001)
     elif method == "FGSM":
-        # FGSM
-        attacker = FGSM(model=model)
+        attacker = FGSM(model=model, epsilon=0.01, alpha=0.01)
     elif method == "I-FGSM":
-        # I-FGSM
-        attacker = I_FGSM(model=model, epsilon=1)
+        attacker = I_FGSM(model=model, epsilon=0.001, alpha=0.01, iters=15)
     elif method == "JSMA":
-        # JSMA
-        attacker = JSMA(model=model)
+        attacker = JSMA(model=model, theta=1.0, gamma=0.1)
     elif method == "ONE-PIXEL":
-        # ONE-PIXEL
-        # attacker = ONE_PIXEL(parameter=parameter)
         attacker = ONE_PIXEL(model=model, pixels_changed=10)
-    elif method == "C&W":
-        # C&W
-        attacker = CW(model=model)
+    elif method == "CW":
+        attacker = CW(model=model, c=1, kappa=1, steps=50, lr=0.01)
     elif method == "DEEPFOOL":
-        # DEEPFOOL
-        # attacker = DeepFool(parameter=parameter)
-        attacker = DeepFool(model=model, overshoot=2, iters=100)
+        attacker = DeepFool(model=model, overshoot=0.01, iters=10)
     elif method == "MI-FGSM":
-        # MI-FGSM
-        attacker = MI_FGSM(model=model)
+        attacker = MI_FGSM(model=model, alpha=0.01, decay=0.3, iters=10)
     elif method == "UPSET":
         # Disturbance generation model
-        # If this attack method is not chosen, it can be ignored
         residual_model = ResidualModel().to(device)
         # -------------------Load the UPSET interference generation model here-------------------
-        residual_model.load_state_dict(torch.load("./parameter/UPSET/target_0/0.pth"))
+        residual_model.load_state_dict(torch.load(f"./parameter/UPSET/0/0.pth", weights_only=True, map_location=device))
         # UPSET
-        attacker = UPSET(model=residual_model)
+        attacker = UPSET(model=model, residual_model=residual_model)
     else:
         raise ValueError(f"Unknown Method: {method}")
     # ----------------------------------------------------------
-
+    os.makedirs(f"./output/{method}", exist_ok=True)
     print("The attack model has been created")
     # Start testing
     for index, (image, target) in enumerate(dataloader):
@@ -110,21 +104,26 @@ def main():
 
         origin_output = attacker.forward(image)
         print("Generating attack samples...")
-        attack_image = attacker.attack(image, target)
+        attack_target = torch.full_like(target, args.target) if args.target > -1 else target
+        attack_image = attacker.attack(image, attack_target, is_targeted=(args.target > -1))
 
         attack_output = model(attack_image)
         print("Generation complete.")
         # Comparisons are displayed using matplotlib
+        image_showed = image.detach().cpu()[0].permute(1, 2, 0).numpy()
+        attack_image_showed = attack_image.detach().cpu()[0].permute(1, 2, 0).numpy()
         show(
             [
-                image,
-                attack_image
+                image_showed,
+                attack_image_showed,
             ], [
-                f"True: {classes[target[0]]}  Predict: {classes[origin_output.argmax(1)[0]]}",
+                f"True: {classes[target[0]]}\n"
+                f"Predict: {classes[origin_output.argmax(1)[0]]}",
+                f"Expect: {"" if args.target > -1 else "not "}{classes[attack_target[0]]}\n"
                 f"Attacked: {classes[attack_output.argmax(1)[0]]}",
             ],
             is_show=False,
-            is_save=True, save_path=f"./output/{attacker.__class__.__name__}/{index}.png"
+            is_save=True, save_path=f"./output/{method}/{index}.png"
         )
 
         input("Enter any press enter to continue generating...")

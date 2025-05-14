@@ -7,8 +7,7 @@ from .base import BaseModel
 
 
 class ONE_PIXEL(BaseModel):
-    def __init__(self, model, pixels_size=40, pop_size=30, iters=15, cr=0.75, factor=0.5, pixels_changed=1,
-                 cuda=True):
+    def __init__(self, model, pixels_size=40, pop_size=30, iters=15, cr=0.75, factor=0.5, pixels_changed=1, cuda=True):
         """
         ONE_PIXEL
 
@@ -37,34 +36,33 @@ class ONE_PIXEL(BaseModel):
 
     @staticmethod
     def perturb(image, pos, rgb):
-        pert_image = image.clone().detach().requires_grad_(True)
+        pert_image = image.clone().detach()
         # 根据个体生成 新的 对抗样本
         for i in range(3):
             pert_image[0, i, pos[0], pos[1]] = rgb[i]
+        return pert_image.requires_grad_(True)
 
-        return pert_image
-
+    @torch.no_grad()
     def evaluate(self, pos_candidates, rgb_candidates, img, label) -> np.ndarray:
         # 所有像素点种群的个体的适应度
         fitness = []
-        with torch.no_grad():
-            # 遍历每个像素的种群
-            for index in range(self.pixels_size):
-                # 获取像素的坐标
-                pos = pos_candidates[index]
-                # 单个像素点的种群的个体适应度
-                pixel_fitness = []
-                # 遍历每个种群的个体
-                for rgb in rgb_candidates[index]:
-                    # 生成 新的 对抗样本
-                    pert_image = self.perturb(img, pos, rgb)
-                    # 获取新图像的输出
-                    output = self.model(pert_image).squeeze()
-                    # 概率归一化 # F.softmax归一化的概率差距太大，容易造成遗漏
-                    softmax = F.sigmoid(output)
-                    # 选择对应标签的适应度
-                    pixel_fitness.append(softmax[label[0]].item())
-                fitness.append(pixel_fitness)
+        # 遍历每个像素的种群
+        for index in range(self.pixels_size):
+            # 获取像素的坐标
+            pos = pos_candidates[index]
+            # 单个像素点的种群的个体适应度
+            pixel_fitness = []
+            # 遍历每个种群的个体
+            for rgb in rgb_candidates[index]:
+                # 生成 新的 对抗样本
+                pert_image = self.perturb(img, pos, rgb)
+                # 获取新图像的输出
+                output = self.model(pert_image).squeeze()
+                # 概率归一化 # F.softmax归一化的概率差距太大，容易造成遗漏
+                softmax = F.sigmoid(output)
+                # 选择对应标签的适应度
+                pixel_fitness.append(softmax[label[0]].item())
+            fitness.append(pixel_fitness)
         return np.array(fitness)
 
     def evolve(self, rgb_candidates):
@@ -88,7 +86,7 @@ class ONE_PIXEL(BaseModel):
                 choose = np.random.choice((True, False), size=3, p=(self.cr, 1 - self.cr))
                 next_rgb[choose] = pixel_candidates[i][choose]
                 # 处理越界值
-                next_rgb = np.clip(next_rgb, min=0, max=1)
+                next_rgb = np.clip(next_rgb, 0, 1)
                 # 将生成的新解放入下一代中
                 pixel_candidates[i] = next_rgb
             rgb_candidates[index] = pixel_candidates
@@ -103,6 +101,7 @@ class ONE_PIXEL(BaseModel):
         # pos_candidates = np.random.randint(0, image.size(2), size=(self.pixels_size, 2))
         # 使用正态分布 R~N(0.5, 0.5) G~N(0.5, 0.5) B~N(0.5, 0.5) 来生成 R, G, B ?
         rgb_candidates = np.random.normal(0.5, 0.5, size=(self.pixels_size, self.pop_size, 3))
+        rgb_candidates = np.clip(rgb_candidates, 0, 1)
         # 评估每个候选解的适应度
         fitness = self.evaluate(pos_candidates, rgb_candidates, image, target)
         # 迭代过程
@@ -123,19 +122,19 @@ class ONE_PIXEL(BaseModel):
         # 对根据适应度对种群及个体进行排序
         if is_targeted:
             # 从大到小
-            pixels_fitness_arg = np.array([np.argmax(subfitness) for subfitness in fitness])
-            pixels_fitness = np.array([np.max(subfitness) for subfitness in fitness])
+            pixels_fitness_arg = fitness.argmax(axis=1)
+            pixels_fitness = fitness.max(axis=1)
             indexarr = np.argsort(pixels_fitness)[::-1]
         else:
             # 从小到大
-            pixels_fitness_arg = np.array([np.argmin(subfitness) for subfitness in fitness])
-            pixels_fitness = np.array([np.min(subfitness) for subfitness in fitness])
+            pixels_fitness_arg = fitness.argmin(axis=1)
+            pixels_fitness = fitness.min(axis=1)
             indexarr = np.argsort(pixels_fitness)
         # 根据d最好 的 适应度 进行选择并叠加在原样本中生成对抗样本
         perturb_img = image
         for index in range(min(self.pixels_size, self.pixels_changed)):
-            perturb_img = self.perturb(pos_candidates[indexarr[index]],
-                                       rgb_candidates[indexarr[index], pixels_fitness_arg[index]],
-                                       perturb_img
+            perturb_img = self.perturb(perturb_img,
+                                       pos_candidates[indexarr[index]],
+                                       rgb_candidates[indexarr[index], pixels_fitness_arg[index]]
                                        )
         return perturb_img

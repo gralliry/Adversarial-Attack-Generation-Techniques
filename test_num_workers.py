@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Description: Select the optimal number of num workers by uptime
-from time import time
+import time
 import multiprocessing as mp
 import torch
 import torchvision
@@ -9,7 +9,6 @@ from torchvision import transforms
 if __name__ == "__main__":
     transform = transforms.Compose([
         torchvision.transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ])
 
     dataset = torchvision.datasets.CIFAR10(
@@ -21,11 +20,11 @@ if __name__ == "__main__":
         transform=transform
     )
     print(f"num of CPU: {mp.cpu_count()}")
-    for num_workers in range(2, mp.cpu_count(), 2):
-        train_loader = torch.utils.data.DataLoader(dataset, shuffle=True, num_workers=num_workers, batch_size=64,
-                                                   pin_memory=True)
-        start = time()
-        for i, data in enumerate(train_loader, 0):
+    for num_workers in range(0, mp.cpu_count(), 2):
+        dataloader = torch.utils.data.DataLoader(dataset, shuffle=True, num_workers=num_workers, batch_size=64,
+                                                 pin_memory=True)
+        start = time.time()
+        for images, labels in dataloader:
             pass
-        end = time()
-        print(f"Finish with:{end - start} second, num_workers={num_workers}")
+        end = time.time()
+        print(f"Finish with: {end - start} second, num_workers={num_workers}")

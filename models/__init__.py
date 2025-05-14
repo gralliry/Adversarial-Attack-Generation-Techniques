@@ -23,7 +23,7 @@ from .resnet import *
 
 # IndentifyModel = SimpleDLA
 # IndentifyModel = VGG # ('VGG19')
-IndentifyModel = ResNet50
+IndentifyModel = ResNet18
 # IndentifyModel = PreActResNet18
 # IndentifyModel = GoogLeNet
 # IndentifyModel = DenseNet121

@@ -6,7 +6,7 @@ from .base import BaseModel
 
 
 class CW(BaseModel):
-    def __init__(self, model, cuda=True, c=1, kappa=1, steps=50, lr=0.01):
+    def __init__(self, model, cuda=True, c=1, kappa=1, steps=50, lr=0.1):
         """
         C&W attack
 
@@ -31,16 +31,14 @@ class CW(BaseModel):
         assert image.size(0) == 1, ValueError("Only data with batch_size = 1 will be accepted")
 
         image = image.clone().detach().requires_grad_(True)
-
-        w = self.inverse_tanh_space(image).detach()
-        w.requires_grad = True
+        # 0, 1 -> -1, 1 -> -inf, inf
+        w = self.atanh(torch.clamp(image * 2 - 1, min=-1, max=1)).detach().requires_grad_(True)
 
         best_adv_images = image.clone().detach()
-        best_L2 = 1e10 * torch.ones((len(image))).to(self.device)
+        best_l2 = 1e10 * torch.ones((len(image),)).to(self.device)
         dim = len(image.shape)
 
         mse_loss = torch.nn.MSELoss(reduction="none")
-        flatten = torch.nn.Flatten()
 
         optimizer = torch.optim.Adam([w], lr=self.lr)
 
@@ -52,13 +50,25 @@ class CW(BaseModel):
                 adv_images = self.tanh_space(w)
 
                 # Calculate loss
-                current_L2 = mse_loss(flatten(adv_images), flatten(image)).sum(dim=1)
-                L2_loss = current_L2.sum()
+                current_l2 = mse_loss(adv_images, image).sum(dim=[1, 2, 3])
+                l2_loss = current_l2.sum()
 
                 outputs = self.model(adv_images)
-                f_loss = self.f(outputs, target, is_targeted).sum()
 
-                cost = L2_loss + self.c * f_loss
+                one_hot_labels = torch.eye(outputs.shape[1]).to(self.device)[target]
+                # (0,0,...,1,...,0)
+
+                # find the max logit other than the target class
+                other = torch.max((1 - one_hot_labels) * outputs, dim=1)[0]
+                # get the target class's logit
+                real = torch.max(one_hot_labels * outputs, dim=1)[0]
+
+                if is_targeted:
+                    f_loss = torch.clamp((other - real), min=-self.kappa)
+                else:
+                    f_loss = torch.clamp((real - other), min=-self.kappa)
+
+                cost = l2_loss + self.c * f_loss
 
                 optimizer.zero_grad()
                 cost.backward()
@@ -75,8 +85,8 @@ class CW(BaseModel):
 
                 # Filter out images that get either correct predictions or non-decreasing loss,
                 # i.e., only images that are both misclassified and loss-decreasing are left
-                mask = condition * (best_L2 > current_L2.detach())
-                best_L2 = mask * current_L2.detach() + (1 - mask) * best_L2
+                mask = condition * (best_l2 > current_l2.detach())
+                best_l2 = mask * current_l2.detach() + (1 - mask) * best_l2
 
                 mask = mask.view([-1] + [1] * (dim - 1))
                 best_adv_images = mask * adv_images.detach() + (1 - mask) * best_adv_images
@@ -85,24 +95,10 @@ class CW(BaseModel):
 
     @staticmethod
     def tanh_space(x):
+        # -inf, inf -> 0, 1
         return 1 / 2 * (torch.tanh(x) + 1)
-
-    def inverse_tanh_space(self, x):
-        return self.atanh(torch.clamp(x * 2 - 1, min=-1, max=1))
 
     @staticmethod
     def atanh(x):
+        # -1, 1 -> -inf, inf
         return 0.5 * torch.log((1 + x) / (1 - x))
-
-    def f(self, outputs, labels, is_targeted):
-        one_hot_labels = torch.eye(outputs.shape[1]).to(self.device)[labels]
-
-        # find the max logit other than the target class
-        other = torch.max((1 - one_hot_labels) * outputs, dim=1)[0]
-        # get the target class's logit
-        real = torch.max(one_hot_labels * outputs, dim=1)[0]
-
-        if is_targeted:
-            return torch.clamp((other - real), min=-self.kappa)
-        else:
-            return torch.clamp((real - other), min=-self.kappa)

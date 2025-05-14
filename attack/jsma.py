@@ -7,7 +7,7 @@ from .base import BaseModel
 
 
 class JSMA(BaseModel):
-    def __init__(self, model, alpha=3.0, gamma=3.0, iters=20, cuda=True):
+    def __init__(self, model, theta=1.0, gamma=0.1, cuda=True):
         """
         JSMA
 
@@ -19,16 +19,14 @@ class JSMA(BaseModel):
 
         https://github.com/FenHua/Adversarial-Examples/blob/master/%E9%BB%91%E7%9B%92/JSMA/JSMA.ipynb
         :param model:
-        :param alpha: Perturbation step size
+        :param theta: Perturbation step size
         :param gamma: Define the limits of change/boundaries
-        :param iters: Maximum number of loops/looks/number of changed pixels
         :param cuda:  Whether to start CUDA
         """
         super().__init__(model=model, cuda=cuda)
 
-        self.alpha = alpha
+        self.theta = theta
         self.gamma = gamma
-        self.iters = iters
 
     def attack(self, image, target, is_targeted=True):
         """
@@ -41,56 +39,125 @@ class JSMA(BaseModel):
         assert image.size(0) == 1, ValueError("Only data with batch_size = 1 will be accepted")
         assert is_targeted is True, ValueError("JSMA must be targeted")
 
-        pert_image = image.clone().detach().requires_grad_(True)
-        # Generate spoofed labels
-        # The number of fool_target elements here should be the same as batch_size
-        # Define the search field, set the modified position to zero, and no longer calculate it next time
-        mask = np.ones(pert_image.shape)
-        self.model.eval()
-        with torch.enable_grad():
-            for _ in range(self.iters):
-                output = self.model(pert_image)
-                # This is only appropriate for a judgment where batch_size is 1
-                if output.argmax(1) == target:
-                    # If the attack is successful, the iteration is stopped
-                    break
-                # Backpropagation is performed on each image
-                output[0, target[0]].backward(retain_graph=True)
-                # Generate perturbation points and perturbation sizes
-                index, pix_sign = self.saliency_map(pert_image.grad.data.cpu().numpy().copy(), mask)
-                # Add Perturbation to Adversarial Samples
-                pert_image.data[index] += pix_sign * self.alpha * self.gamma
-                # Points that have reached the limit no longer participate in the update
-                if not -self.gamma <= pert_image.data[index] <= self.gamma:
-                    # Limit perturbations
-                    pert_image.data[index] = torch.clamp(pert_image.data[index], -self.gamma, self.gamma)
-                    # The pixel corresponding to the search field is zeroed,
-                    # indicating that the point is no longer involved in the calculation update
-                    mask[index] = 0
-                # Gradient clearing
-                pert_image.grad.zero_()
+        var_image = image.clone().detach().requires_grad_(True)
+        if self.theta > 0:
+            increasing = True
+        else:
+            increasing = False
 
-        return pert_image.detach()
+        num_features = int(np.prod(var_image.shape[1:]))
+        shape = var_image.shape
+
+        # Perturb two pixels in one iteration, thus max_iters is divided by 2
+        max_iters = int(np.ceil(num_features * self.gamma / 2.0))
+
+        # Masked search domain, if the pixel has already reached the top or bottom, we don't bother to modify it
+        if increasing:
+            domain = torch.lt(var_image, 0.99)
+        else:
+            domain = torch.gt(var_image, 0.01)
+
+        domain = domain.view(num_features)
+        output = self.model(var_image)
+        current_pred = torch.argmax(output, 1)
+        iters = 0
+        while (
+                (iters < max_iters)
+                and (current_pred != target)
+                and (domain.sum() != 0)
+        ):
+            # Calculate Jacobian matrix of forward derivative
+            jacobian = self.compute_jacobian(var_image)
+            # Get the saliency map and calculate the two pixels that have the greatest influence
+            p1, p2 = self.saliency_map(jacobian, target, increasing, domain, num_features)
+            # Apply modifications
+            var_sample_flatten = var_image.view(-1, num_features).clone().detach()
+            # var_sample_flatten = var_image.view(-1, num_features)
+            var_sample_flatten[0, p1] += self.theta
+            var_sample_flatten[0, p2] += self.theta
+
+            new_image = torch.clamp(var_sample_flatten, min=0.0, max=1.0)
+            new_image = new_image.view(shape)
+            domain[p1] = 0
+            domain[p2] = 0
+            var_image = new_image.clone().detach().to(self.device)
+
+            output = self.model(var_image)
+            current_pred = torch.argmax(output.data, 1)
+            iters += 1
+
+        return var_image.detach()
+
+    def compute_jacobian(self, image):
+        var_image = image.clone().detach().requires_grad_(True)
+        output = self.model(var_image)
+
+        num_features = int(np.prod(var_image.shape[1:]))
+        jacobian = torch.zeros([output.shape[1], num_features])
+        for i in range(output.shape[1]):
+            if var_image.grad is not None:
+                var_image.grad.zero_()
+            output[0][i].backward(retain_graph=True)
+            # Copy the derivative to the target place
+            jacobian[i] = (
+                var_image.grad.squeeze().view(-1, num_features).clone()
+            )  # nopep8
+
+        return jacobian.to(self.device)
 
     # Calculate saliency plots
-    @staticmethod
-    def saliency_map(derivative: np.ndarray, mask: np.ndarray):
-        """
-        This method is a simplified version of the beta parameter and focuses on the points
-        where the attack target contributes the most
-        :param derivative:
-        :param mask: Marker bits, which record the coordinates of the points that have been visited
-        :return:
-        """
-        # Prediction Contribution to Attack Target # is set to 0 for searched points
-        alphas = derivative * mask
-        # Predict the contribution to non-attack targets
-        betas = -np.ones_like(alphas)
-        # Calculate the gap between positive and negative perturbations
-        sal_map = np.abs(alphas) * np.abs(betas) * np.sign(alphas * betas)
-        # Best pixel and perturbation direction
-        index = np.argmax(sal_map)
-        # Convert to (p1, p2) format
-        index = np.unravel_index(index, mask.shape)
-        pixel_sign = np.sign(alphas)[index]
-        return index, pixel_sign
+    @torch.no_grad()
+    def saliency_map(self, jacobian, target_label, increasing, search_space, nb_features):
+        # The search domain
+        domain = torch.eq(search_space, 1).float()
+        # The sum of all features' derivative with respect to each class
+        all_sum = torch.sum(jacobian, dim=0, keepdim=True)
+        # The forward derivative of the target class
+        target_grad = jacobian[target_label]
+        # The sum of forward derivative of other classes
+        others_grad = all_sum - target_grad
+
+        # This list blanks out those that are not in the search domain
+        if increasing:
+            increase_coef = 2 * (torch.eq(domain, 0)).float().to(self.device)
+        else:
+            increase_coef = -1 * 2 * (torch.eq(domain, 0)).float().to(self.device)
+        increase_coef = increase_coef.view(-1, nb_features)
+
+        # Calculate sum of target forward derivative of any 2 features.
+        target_tmp = target_grad.clone()
+        target_tmp -= increase_coef * torch.max(torch.abs(target_grad))
+        # PyTorch will automatically extend the dimensions
+        alpha = target_tmp.view(-1, 1, nb_features) + target_tmp.view(
+            -1, nb_features, 1
+        )
+        # Calculate sum of other forward derivative of any 2 features.
+        others_tmp = others_grad.clone()
+        others_tmp += increase_coef * torch.max(torch.abs(others_grad))
+        beta = others_tmp.view(-1, 1, nb_features) + others_tmp.view(-1, nb_features, 1)
+
+        # Zero out the situation where a feature sums with itself
+        tmp = np.ones((nb_features, nb_features), int)
+        np.fill_diagonal(tmp, 0)
+        zero_diagonal = torch.from_numpy(tmp).byte().to(self.device)
+
+        # According to the definition of saliency map in the paper (formulas 8 and 9),
+        # those elements in the saliency map that doesn't satisfy the requirement will be blanked out.
+        if increasing:
+            mask1 = torch.gt(alpha, 0.0)
+            mask2 = torch.lt(beta, 0.0)
+        else:
+            mask1 = torch.lt(alpha, 0.0)
+            mask2 = torch.gt(beta, 0.0)
+
+        # Apply the mask to the saliency map
+        mask = torch.mul(torch.mul(mask1, mask2), zero_diagonal.view_as(mask1))
+        # Do the multiplication according to formula 10 in the paper
+        saliency_map = torch.mul(torch.mul(alpha, torch.abs(beta)), mask.float())
+        # Get the most significant two pixels
+        max_idx = torch.argmax(saliency_map.view(-1, nb_features * nb_features), dim=1)
+        # p = max_idx // nb_features
+        p = torch.div(max_idx, nb_features, rounding_mode="floor")
+        # q = max_idx % nb_features
+        q = max_idx - p * nb_features
+        return p, q

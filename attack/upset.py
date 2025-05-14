@@ -15,21 +15,26 @@ class ResidualModel(nn.Module):
 
     def __init__(self):
         super(self.__class__, self).__init__()
-        self.model = nn.Sequential(
+        self.model1 = nn.Sequential(
             nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(64),
             nn.ReLU(inplace=True),
-            nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1),
-            nn.Tanh()
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1)
         )
 
     def forward(self, x):
         # (batch_size, 3, 32, 32) -> (batch_size, 3, 32, 32)
-        x = self.model(x)
-        return x
+        return x + self.model1(x)
 
 
 class UPSET(BaseModel):
-    def __init__(self, model: ResidualModel, cuda=True, s=0.1):
+    def __init__(self, model, residual_model, cuda=True, s=0.1):
         """
         UPSET
         https://arxiv.org/abs/1707.01159
@@ -38,6 +43,7 @@ class UPSET(BaseModel):
         """
         super().__init__(model=model, cuda=cuda)
         self.s = s
+        self.residual_model = residual_model
 
     def attack(self, image, target, is_targeted=False):
         """
@@ -48,7 +54,7 @@ class UPSET(BaseModel):
         image = image.clone().detach().requires_grad_(True)
         # Superimpose perturbations to the original sample
         # Output perturbations
-        pert_image = image + self.s * self.model(image)
+        pert_image = image + self.s * self.residual_model(image)
         # Limitations
         pert_image = torch.clamp(pert_image, 0, 1)
-        return pert_image
+        return pert_image.detach()

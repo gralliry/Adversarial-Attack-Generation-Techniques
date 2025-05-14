@@ -34,23 +34,22 @@ class I_FGSM(BaseModel):
         """
         pert_image = image.clone().detach().requires_grad_(True)
 
-        self.model.eval()
         with torch.enable_grad():
             # Iterate
             for _ in range(self.iters):
+                pert_image = pert_image.clone().detach().requires_grad_(True)
                 # Forward propagation
-                outputs = self.model(pert_image)
+                output = self.model(pert_image)
+                self.model.zero_grad()
                 # Calculate the loss
                 if is_targeted:
-                    loss = -self.criterion(outputs, target)
+                    loss = -self.criterion(output, target)
                 else:
-                    loss = self.criterion(outputs, target)
+                    loss = self.criterion(output, target)
                 loss.backward()
                 # Gradient Rise # Utilize gradient symbols to perturb while limiting the size of the perturbation
                 delta = torch.clamp(self.alpha * pert_image.grad.sign(), min=-self.epsilon, max=self.epsilon)
-                pert_image = pert_image + delta
                 # Make sure the perturbed image is still a valid input (in the range of [0, 1])
-                pert_image = torch.clamp(pert_image, 0, 1)
-                pert_image.grad.zero_()
+                pert_image = torch.clamp(pert_image + delta, 0, 1)
 
         return pert_image.detach()

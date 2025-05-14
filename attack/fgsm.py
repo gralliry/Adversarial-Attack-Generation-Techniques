@@ -34,7 +34,7 @@ class FGSM(BaseModel):
         # Set the requires_grad of the input tensor to True to calculate the gradient
         pert_image = image.clone().detach().requires_grad_(True)
         # The evaluation mode is set, but the gradient is calculated normally
-        self.model.eval()
+        # self.model.eval()
         with torch.enable_grad():
             # Use the model for forward propagation
             output = self.model(pert_image)
@@ -49,6 +49,5 @@ class FGSM(BaseModel):
             delta = torch.clamp(self.alpha * pert_image.grad.sign(), min=-self.epsilon, max=self.epsilon)
             # Limit the generated adversarial samples to the range of [0, 1].
             pert_image = torch.clamp(pert_image + delta, 0, 1)
-            pert_image.grad.zero_()
 
         return pert_image.detach()
