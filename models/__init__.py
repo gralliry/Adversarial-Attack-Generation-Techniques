@@ -1,6 +1,10 @@
 # https://github.com/kuangliu/pytorch-cifar
 # ------------------Select the model to train------------------
-
+"""
+Model must:
+Input:  (batch_size, c, h, w)
+Output: (batch_size, num_classes)
+"""
 # from .vgg import *
 # from .dpn import *
 # from .lenet import *

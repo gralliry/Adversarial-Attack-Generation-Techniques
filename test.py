@@ -43,7 +43,7 @@ def main():
     # Once loaded, you can delete the warning
     model.load_state_dict(torch.load(args.path, map_location=device, weights_only=True))
 
-    print("The pretrained model is loaded")
+    print("The Pre-Trained Model is Loaded")
 
     # -------------------------------------------
     method = args.method.upper()
@@ -110,8 +110,8 @@ def main():
             break
 
     print(f"{attacker.__class__.__name__} "
-          f"Initial      accuracy rate: {total_origin_accuracy / total_num} "
-          f"After-attack accuracy rate: {total_attack_accuracy / total_num} ")
+          f"Initial      Accuracy Rate: {total_origin_accuracy / total_num} "
+          f"After-attack Accuracy Rate: {total_attack_accuracy / total_num} ")
 
 
 if __name__ == "__main__":
