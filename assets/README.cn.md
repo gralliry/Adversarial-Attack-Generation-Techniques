@@ -62,7 +62,7 @@ python train.py -e 100
 
 ```shell
 # -m 指定攻击方法
-# L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, C&W, DEEPFOOL, MI-FGSM, UPSET
+# L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, CW, DEEPFOOL, MI-FGSM, UPSET
 python contrast.py -m FGSM
 ```
 
@@ -70,7 +70,7 @@ python contrast.py -m FGSM
 
 ```shell
 # -m 指定攻击方法
-# L-BFGS、FGSM、I-FGSM、JSMA、单像素、c&w、deepfool、mi-fgsm、翻转
+# L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, CW, DEEPFOOL, MI-FGSM, UPSET
 # -c 指定测试运行次数，可选，默认值为 1000
 python test.py -m FGSM -c 1000
 ```

@@ -64,7 +64,7 @@ python train.py -e 100
 
 ```shell
 # -m Specify the attack method
-# L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, C&W, DEEPFOOL, MI-FGSM, UPSET
+# L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, CW, DEEPFOOL, MI-FGSM, UPSET
 python contrast.py -m FGSM
 ```
 
@@ -72,7 +72,7 @@ python contrast.py -m FGSM
 
 ```shell
 # -m Specify the attack method
-# L-BFGS、FGSM、I-FGSM、JSMA、单像素、c&w、deepfool、mi-fgsm、翻转
+# L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, CW, DEEPFOOL, MI-FGSM, UPSET
 # -c Specify the number of test runs, optional, defaults to 1000
 python test.py -m FGSM -c 1000
 ```
