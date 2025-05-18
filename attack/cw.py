@@ -43,7 +43,6 @@ class CW(BaseModel):
         optimizer = torch.optim.Adam([w], lr=self.lr)
 
         # Start iterating
-        self.model.eval()
         with torch.enable_grad():
             for step in range(self.steps):
                 # Get adversarial images
@@ -57,7 +56,6 @@ class CW(BaseModel):
 
                 one_hot_labels = torch.eye(outputs.shape[1]).to(self.device)[target]
                 # (0,0,...,1,...,0)
-
                 # find the max logit other than the target class
                 other = torch.max((1 - one_hot_labels) * outputs, dim=1)[0]
                 # get the target class's logit
