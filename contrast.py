@@ -79,7 +79,7 @@ def main():
     elif method == "JSMA":
         attacker = JSMA(model=model, theta=1.0, gamma=0.1)
     elif method == "ONE-PIXEL":
-        attacker = ONE_PIXEL(model=model, pixels_changed=10)
+        attacker = ONE_PIXEL(model=model, pixels_changed=1)
     elif method == "CW":
         attacker = CW(model=model, c=1, kappa=1, steps=50, lr=0.01)
     elif method == "DEEPFOOL":
@@ -119,7 +119,7 @@ def main():
             ], [
                 f"True: {classes[target[0]]}\n"
                 f"Predict: {classes[origin_output.argmax(1)[0]]}",
-                f"Expect: {"" if args.target > -1 else "not "}{classes[attack_target[0]]}\n"
+                f"Expect: {'' if args.target > -1 else 'not '}{classes[attack_target[0]]}\n"
                 f"Attacked: {classes[attack_output.argmax(1)[0]]}",
             ],
             is_show=False,

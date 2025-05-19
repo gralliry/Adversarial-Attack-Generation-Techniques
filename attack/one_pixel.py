@@ -7,7 +7,7 @@ from .base import BaseModel
 
 
 class ONE_PIXEL(BaseModel):
-    def __init__(self, model, pixels_size=40, pop_size=30, iters=15, cr=0.75, factor=0.5, pixels_changed=1, cuda=True):
+    def __init__(self, model, pixels_size=40, iters=15, cr=0.75, factor=0.5, pixels_changed=1, cuda=True):
         """
         ONE_PIXEL
 
@@ -19,7 +19,6 @@ class ONE_PIXEL(BaseModel):
         :param model: 模型
         :param iters: 迭代次数
         :param pixels_size: 预选的像素数量/种群个数
-        :param pop_size: 一个像素中种群个体数量
         :param cr: 交叉重组概率
         :param factor: 缩放因子 N = a + F*(b-c)，产生变异个体
         :param pixels_changed: 改变的像素数量
@@ -28,19 +27,19 @@ class ONE_PIXEL(BaseModel):
         super().__init__(model=model, cuda=cuda)
 
         self.pixels_size = pixels_size
-        self.pop_size = pop_size
         self.iters = iters
         self.cr = cr
         self.factor = factor
         self.pixels_changed = pixels_changed
 
-    @staticmethod
     @torch.no_grad()
-    def perturb(image, vi):
+    def perturb(self, image, vi):
         # image [1, c, h, w]
         pert_image = image.clone().detach()
+        # print(pert_image.shape, vi.shape)
         # 根据个体生成 新的 对抗样本
-        pert_image[0, :, np.int32(vi[0] * image.shape[2]), np.int32(vi[0] * image.shape[3])] = vi[2:5]
+        pert_image[0, :, int(vi[0] * image.shape[2]), int(vi[1] * image.shape[3])] = torch.from_numpy(vi[2:5]).to(
+            self.device)
         return pert_image
 
     def evaluate(self, vs: np.ndarray, img, label) -> np.ndarray:
@@ -73,9 +72,9 @@ class ONE_PIXEL(BaseModel):
         """
         vs = vs.copy()
         # 遍历每个像素的种群
-        for index, pixel_candidates in enumerate(vs):
+        for index in range(vs.shape[0]):
             # 从当前候选解中随机选择3个不同的解
-            x1, x2, x3 = pixel_candidates[np.random.choice(self.pop_size, 3, replace=False)]
+            x1, x2, x3 = vs[np.random.choice(self.pixels_size, 3, replace=False)]
             # 差分操作，生成新的解
             next_v = x1 + self.factor * (x2 - x3)
             # 处理越界值
@@ -89,7 +88,7 @@ class ONE_PIXEL(BaseModel):
         assert image.size(0) == 1, ValueError("只接受 batch_size = 1 的数据")
         image = image.clone().detach().requires_grad_(True)
         # 使用均匀分布 X~U(0,31) Y~U(0,31) 来生成 X, Y
-        x_y = np.random.uniform(0.0, 1.0, size=(self.pixels_size, 1))
+        x_y = np.random.uniform(0.0, 1.0, size=(self.pixels_size, 2))
         # 生成RGB值（方法1：直接生成0-255范围）
         rgb = np.random.normal(loc=0.5, scale=0.5, size=(self.pixels_size, 3))
         rgb = np.clip(rgb, 0, 1)
