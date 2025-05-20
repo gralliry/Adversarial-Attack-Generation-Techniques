@@ -76,7 +76,7 @@ def main():
     model = IndentifyModel().to(device)
     model.load_state_dict(torch.load(args.path, map_location=device, weights_only=True))
 
-    print("The pre-training model is loaded")
+    print("The Pre-Training Model is Loaded")
     # ----------------------------------------------------------
     method = args.method.upper()
     if method == "L-BFGS":
@@ -106,7 +106,7 @@ def main():
         raise ValueError(f"Unknown Method: {method}")
     # ----------------------------------------------------------
     os.makedirs(f"./output/{method}", exist_ok=True)
-    print("The attack model has been created")
+    print("The Attack Model has been Created")
     # Start testing
     num = 0
     num_try = 0
@@ -120,12 +120,11 @@ def main():
                 continue
 
         origin_output = attacker.forward(image)
-        print("Generating Attack Samples...", end="")
+        print(f"Generating Attack Samples...Try: {num_try}", end="\r")
 
         attack_image = attacker.attack(image, attack_target, is_targeted=is_targeted)
 
         attack_output = model(attack_image)
-        print(f"Completed. Try: {num_try}", end="\r")
 
         if args.only_right:
             if origin_output.argmax(1) != target:
@@ -158,8 +157,8 @@ def main():
         num += 1
         num_try = 0
 
-        print("\n")
-        input("Enter any press enter to continue generating...")
+        print("\nCompleted!")
+        input("Enter Any to Continue Generating...")
 
 
 if __name__ == "__main__":
