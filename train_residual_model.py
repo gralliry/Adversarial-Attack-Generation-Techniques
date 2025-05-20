@@ -16,11 +16,11 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("-t", "--target", default=-1, type=int, choices=range(-1, 10),
                     help="针对的target(-1,0~9)")
-parser.add_argument("-e", "--epoch", default=200, type=int, help="训练次数")
+parser.add_argument("-e", "--epoch", default=200, type=int, help="epoch")
 parser.add_argument("-b", "--batch_size", default=512, type=int, help="Batch Size")
-parser.add_argument("-lr", "--learning_rate", default=0.1, type=float, help="学习率")
-parser.add_argument("-pim", "--path_indentify_model", required=True, type=str, help="识别模型路径")
-parser.add_argument("-prm", "--path_residual_model", default="", type=str, help="残差模型路径")
+parser.add_argument("-lr", "--learning_rate", default=0.1, type=float, help="learning rate")
+parser.add_argument("-pim", "--path_indentify_model", required=True, type=str, help="path of indentify model")
+parser.add_argument("-prm", "--path_residual_model", default="", type=str, help="path of residual model")
 
 args = parser.parse_args()
 

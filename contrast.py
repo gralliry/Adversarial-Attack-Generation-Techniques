@@ -25,9 +25,9 @@ parser.add_argument('-p', '--path', required=True,
 parser.add_argument('-t', '--target', type=int, default=-1,
                     help="The target of attacking if it is targeted (0,...,9)")
 parser.add_argument('-os', '--only_success', action="store_true", default=False,
-                    help="Only successful images will be output")
+                    help="Only adversarial samples that succeed in the attack are generated")
 parser.add_argument('-or', '--only_right', action="store_true", default=False,
-                    help="Only right images will be output")
+                    help="Only initial samples with successful inference are generated")
 parser.add_argument('-sst', '--skip_same_target', action="store_true", default=False,
                     help="Skip the same target if is_targeted")
 
