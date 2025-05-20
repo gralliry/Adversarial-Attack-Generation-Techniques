@@ -7,7 +7,7 @@ from .base import BaseModel
 
 
 class FGSM(BaseModel):
-    def __init__(self, model, epsilon=0.06, alpha=0.06, cuda=True):
+    def __init__(self, model, epsilon=0.06, cuda=True):
         """
         FGSM
 
@@ -20,7 +20,6 @@ class FGSM(BaseModel):
         super().__init__(model=model, cuda=cuda)
 
         self.criterion = torch.nn.CrossEntropyLoss().to(self.device)
-        self.alpha = alpha
         self.epsilon = epsilon
 
     def attack(self, image, target, is_targeted=False):
@@ -45,9 +44,7 @@ class FGSM(BaseModel):
                 loss = self.criterion(output, target)
             # Backpropagation, calculating the gradient
             loss.backward()
-            # Perform a gradient ascent # Perturbation with gradient symbols
-            delta = torch.clamp(self.alpha * pert_image.grad.sign(), min=-self.epsilon, max=self.epsilon)
             # Limit the generated adversarial samples to the range of [0, 1].
-            pert_image = torch.clamp(pert_image + delta, 0, 1)
+            pert_image = torch.clamp(pert_image + self.epsilon * pert_image.grad.sign(), 0, 1)
 
         return pert_image.detach()

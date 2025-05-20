@@ -22,6 +22,12 @@ parser.add_argument('-m', '--method',
                     help="Test method: L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, CW, DEEPFOOL, MI-FGSM, UPSET")
 parser.add_argument('-p', '--path', required=True, help="The path of the model parameter file")
 parser.add_argument('-t', '--target', type=int, default=-1, help="The target of attacking if it is targeted")
+parser.add_argument('-os', '--only_success', action="store_true", default=False,
+                    help="Only successful images will be output")
+parser.add_argument('-or', '--only_right', action="store_true", default=False,
+                    help="Only right images will be output")
+parser.add_argument('-sst', '--skip_same_target', action="store_true", default=False,
+                    help="Skip the same target if is_targeted")
 
 args = parser.parse_args()
 
@@ -53,12 +59,15 @@ def show(images, texts, is_show=False, is_save=True, save_path="./output.png"):
 
 
 def main():
+    is_targeted = args.target > -1
+
     transform = torchvision.transforms.Compose([
         transforms.ToTensor(),
     ])
 
     dataset = torchvision.datasets.CIFAR10("./datasets", train=False, transform=transform)
 
+    # batch_size must be 1
     dataloader = torch.utils.data.dataloader.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=0)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -73,13 +82,13 @@ def main():
     if method == "L-BFGS":
         attacker = L_BFGS(model=model, epsilon=0.01, alpha=0.1, iters=10, lr=0.001)
     elif method == "FGSM":
-        attacker = FGSM(model=model, epsilon=0.01, alpha=0.01)
+        attacker = FGSM(model=model, epsilon=0.01)
     elif method == "I-FGSM":
         attacker = I_FGSM(model=model, epsilon=0.001, alpha=0.01, iters=15)
     elif method == "JSMA":
-        attacker = JSMA(model=model, theta=1.0, gamma=0.1)
+        attacker = JSMA(model=model, theta=0.05, gamma=0.1)
     elif method == "ONE-PIXEL":
-        attacker = ONE_PIXEL(model=model, pixels_changed=1)
+        attacker = ONE_PIXEL(model=model, pixels_size=100, pixels_changed=10)
     elif method == "CW":
         attacker = CW(model=model, c=1, kappa=1, steps=50, lr=0.01)
     elif method == "DEEPFOOL":
@@ -99,16 +108,37 @@ def main():
     os.makedirs(f"./output/{method}", exist_ok=True)
     print("The attack model has been created")
     # Start testing
-    for index, (image, target) in enumerate(dataloader):
+    num = 0
+    num_try = 0
+    for image, target in dataloader:
+        num_try += 1
         image, target = image.to(device), target.to(device)
+        attack_target = torch.full_like(target, args.target) if is_targeted else target
+
+        if args.skip_same_target and is_targeted:
+            if target == attack_target:
+                continue
 
         origin_output = attacker.forward(image)
-        print("Generating attack samples...")
-        attack_target = torch.full_like(target, args.target) if args.target > -1 else target
-        attack_image = attacker.attack(image, attack_target, is_targeted=(args.target > -1))
+        print("Generating Attack Samples...", end="")
+
+        attack_image = attacker.attack(image, attack_target, is_targeted=is_targeted)
 
         attack_output = model(attack_image)
-        print("Generation complete.")
+        print(f"Completed. Try: {num_try}", end="\r")
+
+        if args.only_right:
+            if origin_output.argmax(1) != target:
+                continue
+
+        if args.only_success:
+            if is_targeted:
+                if attack_output.argmax(1) != attack_target:
+                    continue
+            else:
+                if attack_output.argmax(1) == attack_target:
+                    continue
+
         # Comparisons are displayed using matplotlib
         image_showed = image.detach().cpu()[0].permute(1, 2, 0).numpy()
         attack_image_showed = attack_image.detach().cpu()[0].permute(1, 2, 0).numpy()
@@ -119,13 +149,16 @@ def main():
             ], [
                 f"True: {classes[target[0]]}\n"
                 f"Predict: {classes[origin_output.argmax(1)[0]]}",
-                f"Expect: {'' if args.target > -1 else 'not '}{classes[attack_target[0]]}\n"
+                f"Expect: {'' if is_targeted else 'not '}{classes[attack_target[0]]}\n"
                 f"Attacked: {classes[attack_output.argmax(1)[0]]}",
             ],
             is_show=False,
-            is_save=True, save_path=f"./output/{method}/{index}.png"
+            is_save=True, save_path=f"./output/{method}/{num}.png"
         )
+        num += 1
+        num_try = 0
 
+        print("\n")
         input("Enter any press enter to continue generating...")
 
 
