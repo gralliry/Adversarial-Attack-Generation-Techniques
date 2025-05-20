@@ -18,7 +18,7 @@
 │    │    └── ...pth
 │    └── ...
 │    │ 
-│    └── UPSET             # The perturbation used by UPSET generates a folder of model parameters
+│    └── UPSET        # The perturbation used by UPSET generates a folder of model parameters
 │         └── 0     # Corresponds to the destination folder for perturbation generation model parameters
 │         │    └── ...pth
 │         └── 1
