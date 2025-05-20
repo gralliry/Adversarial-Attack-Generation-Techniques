@@ -20,8 +20,10 @@ parser.add_argument('-m', '--method',
                     required=True,
                     choices=['L-BFGS', 'FGSM', 'I-FGSM', 'JSMA', 'ONE-PIXEL', 'CW', 'DEEPFOOL', 'MI-FGSM', 'UPSET'],
                     help="Test method: L-BFGS, FGSM, I-FGSM, JSMA, ONE-PIXEL, CW, DEEPFOOL, MI-FGSM, UPSET")
-parser.add_argument('-p', '--path', required=True, help="The path of the model parameter file")
-parser.add_argument('-t', '--target', type=int, default=-1, help="The target of attacking if it is targeted")
+parser.add_argument('-p', '--path', required=True,
+                    help="The path of the model parameter file")
+parser.add_argument('-t', '--target', type=int, default=-1,
+                    help="The target of attacking if it is targeted (0,...,9)")
 parser.add_argument('-os', '--only_success', action="store_true", default=False,
                     help="Only successful images will be output")
 parser.add_argument('-or', '--only_right', action="store_true", default=False,
@@ -36,10 +38,11 @@ warnings.filterwarnings("ignore", category=UserWarning, module="matplotlib")
 classes = ('plane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
 
-# python contrast.py -p parameter/ResNet18/0.pth -m FGSM
+# Example.
+# python contrast.py -p parameter/ResNet18/0.pth -os -or -sst -m FGSM -t 0
 
 
-def show(images, texts, is_show=False, is_save=True, save_path="./output.png"):
+def show(images, texts, is_show=False, is_save=True, save_path="./output/output.png"):
     # Create a 4x1 subgraph layout
     fig, axes = plt.subplots(1, len(images))
 
@@ -94,12 +97,13 @@ def main():
     elif method == "DEEPFOOL":
         attacker = DeepFool(model=model, overshoot=0.01, iters=10)
     elif method == "MI-FGSM":
-        attacker = MI_FGSM(model=model, alpha=0.01, decay=0.3, iters=10)
+        attacker = MI_FGSM(model=model, epsilon=0.03, alpha=0.01, decay=0.05, iters=10)
     elif method == "UPSET":
         # Disturbance generation model
         residual_model = ResidualModel().to(device)
         # -------------------Load the UPSET interference generation model here-------------------
-        residual_model.load_state_dict(torch.load(f"./parameter/UPSET/0/0.pth", weights_only=True, map_location=device))
+        residual_model.load_state_dict(
+            torch.load(f"./parameter/UPSET/{args.target}/0.pth", weights_only=True, map_location=device))
         # UPSET
         attacker = UPSET(model=model, residual_model=residual_model)
     else:

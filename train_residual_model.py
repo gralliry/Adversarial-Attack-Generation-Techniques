@@ -9,14 +9,15 @@ from torch.utils.data.dataloader import DataLoader
 from torchvision import transforms
 from torchvision.datasets import CIFAR10
 
-import attack
+from attack.upset import ResidualModel
 from models import IndentifyModel
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("-t", "--target", required=True, type=int, choices=range(10), help="针对的target(0到9)")
+parser.add_argument("-t", "--target", default=-1, type=int, choices=range(-1, 10),
+                    help="针对的target(-1,0~9)")
 parser.add_argument("-e", "--epoch", default=200, type=int, help="训练次数")
-parser.add_argument("-b", "--batch_size", default=1024, type=int, help="Batch Size")
+parser.add_argument("-b", "--batch_size", default=512, type=int, help="Batch Size")
 parser.add_argument("-lr", "--learning_rate", default=0.1, type=float, help="学习率")
 parser.add_argument("-pim", "--path_indentify_model", required=True, type=str, help="识别模型路径")
 parser.add_argument("-prm", "--path_residual_model", default="", type=str, help="残差模型路径")
@@ -24,7 +25,20 @@ parser.add_argument("-prm", "--path_residual_model", default="", type=str, help=
 args = parser.parse_args()
 
 
+# CUDA_LAUNCH_BLOCKING=1 TORCH_USE_CUDA_DSA=1 python train_residual_model.py -pim parameter/ResNet18/0.pth -t -1
+def criterion(epsilon, output, target, is_targeted):
+    loss1 = torch.nn.functional.cross_entropy(output, target)
+    if not is_targeted:
+        loss1 = -loss1
+    loss1 = 50 - 10 * loss1
+    loss2 = 0.001 * torch.mean(torch.abs(epsilon))
+    loss = loss1 + loss2
+    return loss
+
+
 def main():
+    is_targeted = args.target != -1
+
     transform_train = transforms.Compose([
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
@@ -49,10 +63,10 @@ def main():
     # -------------------Load the recognition model here-------------------
     right_model = IndentifyModel().to(device)
     right_model.load_state_dict(torch.load(args.path_indentify_model, weights_only=True, map_location=device))
-    right_model.eval()
+    right_model.train()
 
     # -------------------Load the UPSET interference model here-------------------
-    residual_model = attack.ResidualModel().to(device)
+    residual_model = ResidualModel().to(device)
     if args.path_residual_model:
         residual_model.load_state_dict(torch.load(args.path_residual_model, weights_only=True, map_location=device))
 
@@ -62,52 +76,54 @@ def main():
     pardir = f"./parameter/UPSET/{args.target}"
     os.makedirs(pardir, exist_ok=True)
     #
-    s = 0.1
-    w = 2
-    #
     for epoch in range(1, args.epoch + 1):
         residual_model.train()
-        for images, _ in tqdm(train_dataloader, desc=f"Train:{epoch}/{args.epoch}"):
+        for images, target in tqdm(train_dataloader, desc=f"Train:{epoch}/{args.epoch}"):
             images = images.to(device)
-            attack_target = torch.tensor([args.target for _ in range(images.size(0))]).to(device)
+            if is_targeted:
+                attack_target = torch.tensor([args.target for _ in range(images.size(0))], dtype=torch.long).to(device)
+            else:
+                attack_target = target.to(device)
+
             optimizer.zero_grad()
 
-            attack_images = torch.clamp(s * residual_model(images) + images, 0, 1)
+            epsilon = residual_model(images)
+            attack_images = torch.clamp(epsilon + images, 0, 1)
             attack_output = right_model(attack_images)
 
-            loss1 = torch.nn.functional.cross_entropy(attack_output, attack_target, reduction='mean')
-            loss2 = torch.nn.functional.mse_loss(attack_images, images)
-            # print(loss1, loss2)
-            loss = loss1 + w * loss2
-            # print(loss1 / loss, loss2 / loss)
+            loss = criterion(epsilon, attack_output, attack_target, is_targeted)
 
             loss.backward()
             optimizer.step()
 
         # Recording accuracy
-        predict_accuracy = 0
-        attacked_accuracy = 0
+        accuracy = 0
         total_loss = 0
         total_num = 0
         residual_model.eval()
-        for images, targets in tqdm(test_dataloader, desc=f"Eval :{epoch}/{args.epoch}"):
-            images, targets = images.to(device), targets.to(device)
-            attack_images = torch.clamp(s * residual_model(images) + images, 0, 1)
-            attack_output = right_model(attack_images)
-            attack_target = torch.tensor([args.target for _ in range(images.size(0))]).to(device)
+        for images, target in tqdm(test_dataloader, desc=f"Eval :{epoch}/{args.epoch}"):
+            images = images.to(device)
+            epsilon = residual_model(images)
 
-            predict_accuracy += targets.eq(attack_output.argmax(1)).sum().item()
-            attacked_accuracy += attack_target.eq(attack_output.argmax(1)).sum().item()
-            total_loss += torch.nn.functional.cross_entropy(attack_output, attack_target, reduction='mean').item()
-            total_loss += w * torch.nn.functional.l1_loss(attack_images, images).item()
+            attack_images = torch.clamp(epsilon + images, 0, 1)
+            attack_output = right_model(attack_images)
+
+            if is_targeted:
+                attack_target = torch.tensor([args.target for _ in range(images.size(0))], dtype=torch.long).to(device)
+                accuracy += attack_target.eq(attack_output.argmax(1)).sum().item()
+            else:
+                attack_target = target.to(device)
+                accuracy += attack_target.ne(attack_output.argmax(1)).sum().item()
+
+            loss = criterion(epsilon, attack_output, attack_target, is_targeted)
+            total_loss += loss.item()
             total_num += images.size(0)
 
         scheduler.step()
 
-        torch.save(residual_model.state_dict(), f"{pardir}/{attacked_accuracy / total_num:.7f}-{epoch}.pth")
+        torch.save(residual_model.state_dict(), f"{pardir}/{accuracy / total_num:.7f}-{epoch}.pth")
 
-        print(f"Identify success rate after predict: {predict_accuracy / total_num}")
-        print(f"Identify error   rate after attack : {attacked_accuracy / total_num}")
+        print(f"Identify Error Rate after Attack: {accuracy / total_num}")
         print(f"Test loss: {total_loss / total_num}")
 
 
