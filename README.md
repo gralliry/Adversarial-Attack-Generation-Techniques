@@ -1,6 +1,26 @@
 # Adversarial Attack Generation Techniques
 
-[中文版本](./assets/README.cn.md)
+## Introduction
+
+Adversarial attack generation techniques for CIFAR-10 based on Pytorch: L-BFGS, FGSM, I-FGSM, MI-FGSM, DeepFool, C&W, JSMA, ONE-PIXEL, UPSET
+
+### Examples
+
+#### FGSM
+
+| not targeted                             | targeted                               |
+|------------------------------------------|----------------------------------------|
+| ![nt-no.png](docs/assets/FGSM/nt-no.png) | ![t-no.png](docs/assets/FGSM/t-no.png) |
+
+#### ONE-PIXEL
+
+| one pixel                                     | multi pixel                                     |
+|-----------------------------------------------|-------------------------------------------------|
+| ![nt-no.png](docs/assets/ONE-PIXEL/nt-no.png) | ![nt-yes.png](docs/assets/ONE-PIXEL/nt-yes.png) |
+
+#### More Examples 
+
+More examples in [docs/assets](docs/assets)
 
 ## File overview
 
@@ -19,13 +39,13 @@
 │    └── ...
 │    │ 
 │    └── UPSET        # The perturbation used by UPSET generates a folder of model parameters
-│         └── 0     # Corresponds to the destination folder for perturbation generation model parameters
+│         └── 0       # Corresponds to the destination folder for perturbation generation model parameters
 │         │    └── ...pth
 │         └── 1
 │         └── ...
 │
 ├── models       
-│    └── resnet.py  # Identify model classes
+│    └── resnet.py    # Identify model classes
 │    └── ...
 │
 ├── report                   # The folder used for the results of the attack effect

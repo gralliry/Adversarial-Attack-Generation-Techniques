@@ -152,7 +152,7 @@ def main():
             ], [
                 f"True: {classes[target[0]]}\n"
                 f"Predict: {classes[origin_output.argmax(1)[0]]}",
-                f"Expect: {'' if is_targeted else 'not '}{classes[attack_target[0]]}\n"
+                f"Expect: {'' if is_targeted else 'not '}{classes[attack_target[0].item()]}\n"
                 f"Attacked: {classes[attack_output.argmax(1)[0]]}",
             ],
             is_show=False,
