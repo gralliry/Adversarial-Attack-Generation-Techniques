@@ -120,4 +120,4 @@ python test_num_workers.py
 
 ## Contributors
 
-- JianYe Liang in SCAU
+- Garcia Aymeric
