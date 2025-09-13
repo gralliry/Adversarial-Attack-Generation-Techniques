@@ -120,4 +120,4 @@ python test_num_workers.py
 
 ## Contributors
 
-- Aymeric Garcia
+- Liang Jianye
