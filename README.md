@@ -118,6 +118,23 @@ python train_residual_model.py -t 0 -e 100
 python test_num_workers.py
 ```
 
+## Results
+
+* N = Not applicable
+* -- = Possible but not tested / not implemented
+
+| Attack Method | Targeted (Visible) | Targeted (Invisible) | Untargeted (Visible) | Untargeted (Invisible) |
+|---------------|--------------------|-----------------------|-----------------------|-------------------------|
+| L-BFGS        | 12.05%             | 50.51%                | N                     | N                       |
+| FGSM          | --                 | --                    | 20.85%                | 42.05%                  |
+| I-FGSM        | --                 | --                    | 0.486%                | 1.652%                  |
+| JSMA          | 13.19%             | 63.20%                | N                     | N                       |
+| ONE-PIXEL     | --                 | --                    | 82.23%                | 92.14%                  |
+| C&W           | 50.20%             | 50.20%                | N                     | N                       |
+| DeepFool      | N                  | N                     | 5.000%                | 5.200%                  |
+| MI-FGSM       | 0.120%             | 0.821%                | --                    | --                      |
+| UPSET         | 39.76%             | 59.24%                | N                     | N                       |
+
 ## Contributors
 
 - Liang Jianye
